@@ -1,0 +1,66 @@
+cmake_minimum_required(VERSION 3.16)
+project(cstl VERSION 0.1.0 LANGUAGES CXX)
+
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+find_package(Threads REQUIRED)
+
+add_library(cstl INTERFACE)
+add_library(cstl::cstl ALIAS cstl)
+target_compile_features(cstl INTERFACE cxx_std_17)
+target_include_directories(cstl INTERFACE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+target_link_libraries(cstl INTERFACE Threads::Threads)
+
+option(CSTL_BUILD_TESTS "Build functional and concurrent stress tests" OFF)
+option(CSTL_BUILD_EXAMPLES "Build examples" OFF)
+option(CSTL_BUILD_BENCHMARKS "Build workload benchmarks" OFF)
+option(CSTL_ENABLE_TSAN "Enable ThreadSanitizer (GCC/Clang)" OFF)
+
+function(cstl_executable target source)
+    add_executable(${target} ${source})
+    target_link_libraries(${target} PRIVATE cstl::cstl)
+    if(MSVC)
+        target_compile_options(${target} PRIVATE /W4 /permissive- /utf-8)
+    else()
+        target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+    if(CSTL_ENABLE_TSAN)
+        if(MSVC OR NOT CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+            message(FATAL_ERROR "ThreadSanitizer requires GCC or Clang")
+        endif()
+        target_compile_options(${target} PRIVATE -fsanitize=thread -g -O1)
+        target_link_options(${target} PRIVATE -fsanitize=thread)
+    endif()
+endfunction()
+
+if(CSTL_BUILD_TESTS)
+    enable_testing()
+    cstl_executable(cstl_tests tests/containers.cpp)
+    add_test(NAME cstl_containers COMMAND cstl_tests)
+    set_tests_properties(cstl_containers PROPERTIES TIMEOUT 90)
+endif()
+if(CSTL_BUILD_EXAMPLES)
+    cstl_executable(cstl_example examples/basic.cpp)
+endif()
+if(CSTL_BUILD_BENCHMARKS)
+    cstl_executable(cstl_benchmark benchmarks/map.cpp)
+endif()
+
+install(TARGETS cstl EXPORT cstlTargets)
+install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(EXPORT cstlTargets NAMESPACE cstl:: DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cstl)
+configure_package_config_file(cmake/cstlConfig.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/cstlConfig.cmake
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cstl)
+write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/cstlConfigVersion.cmake
+    VERSION ${PROJECT_VERSION} COMPATIBILITY SameMajorVersion)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/cstlConfig.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/cstlConfigVersion.cmake
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cstl)
+install(FILES LICENSE NOTICE.md THIRD_PARTY.md README.md SELECTION.md VALIDATION.md vendor_manifest.json
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/cstl)
+install(DIRECTORY licenses/ DESTINATION ${CMAKE_INSTALL_DATADIR}/cstl/licenses)
+install(DIRECTORY provenance/ DESTINATION ${CMAKE_INSTALL_DATADIR}/cstl/provenance)
+install(FILES validation-results.txt DESTINATION ${CMAKE_INSTALL_DATADIR}/cstl OPTIONAL)

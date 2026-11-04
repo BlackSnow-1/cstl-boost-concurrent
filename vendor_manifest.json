@@ -1,0 +1,188 @@
+{
+  "schema": 1,
+  "extracted_on": "2026-11-04",
+  "upstreams": [
+    {
+      "name": "parallel-hashmap",
+      "repository": "https://github.com/greg7mdp/parallel-hashmap",
+      "commit": "47941057f21a1605749a59ecf8effac3698a7224",
+      "files": [
+        {
+          "upstream_path": "parallel_hashmap/phmap.h",
+          "path": "include/cstl/detail/phmap/phmap.h",
+          "sha256": "6c260bac4ca08ed55916a72f4f1543be6f3246cfb30efe4d04e6df6d5ea1e95b",
+          "modified": false
+        },
+        {
+          "upstream_path": "parallel_hashmap/phmap_fwd_decl.h",
+          "path": "include/cstl/detail/phmap/phmap_fwd_decl.h",
+          "sha256": "e5cc0b907638bdeb3dd2a195072a38cb54696afa4ac2455454fe39ba3b8695aa",
+          "modified": false
+        },
+        {
+          "upstream_path": "parallel_hashmap/phmap_utils.h",
+          "path": "include/cstl/detail/phmap/phmap_utils.h",
+          "sha256": "3ef8fd3d4ec8a7aedf296b4f17114281b2500887045c00076e213a3c8b414d38",
+          "modified": false
+        },
+        {
+          "upstream_path": "parallel_hashmap/phmap_bits.h",
+          "path": "include/cstl/detail/phmap/phmap_bits.h",
+          "sha256": "591bef919db90c6f182c9e28ab8cf235d442eea6741b5f5cce1701d244d7e81f",
+          "modified": false
+        },
+        {
+          "upstream_path": "parallel_hashmap/phmap_base.h",
+          "path": "include/cstl/detail/phmap/phmap_base.h",
+          "sha256": "66b825cb84a1d09b0077bdf453aa3c8455c9a234a3424f0d258d52b0eeca0adb",
+          "modified": false
+        },
+        {
+          "upstream_path": "parallel_hashmap/phmap_config.h",
+          "path": "include/cstl/detail/phmap/phmap_config.h",
+          "sha256": "e7bb03b4286dddd5f767b4d5e72ca6766c1cc4d75131262cf66321ab84e26028",
+          "modified": false
+        },
+        {
+          "upstream_path": "LICENSE",
+          "path": "licenses/parallel-hashmap-APACHE-2.0.txt",
+          "sha256": "e8de1a7393457e9c88768b78e6ba790622fbefb040ce48194c2cb0f1b6d4e9ff",
+          "modified": false
+        }
+      ]
+    },
+    {
+      "name": "concurrentqueue",
+      "repository": "https://github.com/cameron314/concurrentqueue",
+      "commit": "36c5755dc0789e5bcddbbb9a201d3af2bbf3024c",
+      "files": [
+        {
+          "upstream_path": "concurrentqueue.h",
+          "path": "include/cstl/detail/moodycamel/concurrentqueue.h",
+          "sha256": "d4801dfe719fba643f2fcb96a0c30512aea90635c7f9a2e9e48a682ccc2250bf",
+          "modified": false
+        },
+        {
+          "upstream_path": "blockingconcurrentqueue.h",
+          "path": "include/cstl/detail/moodycamel/blockingconcurrentqueue.h",
+          "sha256": "ee7c17f604fa0f46013128a923d20d24749a18ab4162fb96428bba560be2530a",
+          "modified": false
+        },
+        {
+          "upstream_path": "lightweightsemaphore.h",
+          "path": "include/cstl/detail/moodycamel/lightweightsemaphore.h",
+          "sha256": "7bb53d98aca0ad9b052c052f9ec4bcda8face58f4e2388a2818fa5bfd6a588bc",
+          "modified": false
+        },
+        {
+          "upstream_path": "LICENSE.md",
+          "path": "licenses/concurrentqueue-LICENSE.md",
+          "sha256": "a0f53fe6abd691d725dd9478cd906e9010c80f06c3de3f83f74576e574d5a3d4",
+          "modified": false
+        },
+        {
+          "upstream_path": "benchmarks/boost/LICENSE_1_0.txt",
+          "path": "licenses/BOOST-1.0.txt",
+          "sha256": "beb8e42e9d6b4284e03304d05a81a0755200a965fc8d0a5e0aea1e84cf805d6e",
+          "modified": false
+        }
+      ]
+    },
+    {
+      "name": "folly",
+      "repository": "https://github.com/meta/folly",
+      "commit": "f190b61dd096f424936ea52e05aae5741bf2f91a",
+      "files": [
+        {
+          "upstream_path": "folly/ProducerConsumerQueue.h",
+          "path": "include/cstl/detail/folly/producer_consumer_queue.hpp",
+          "sha256": "60a81f11bb0dc20cbd5880612b260655b1d3260560ce687b69a37844699164a9",
+          "modified": true,
+          "original_copy": "provenance/folly/ProducerConsumerQueue.h",
+          "source_sha256": "a1f4102d6ab85889e538c06dca21c9d1ab122a768e40725c991f068ef7f54ad4",
+          "changes": [
+            "replace support headers with local power-of-two helper and 64-byte alignment",
+            "isolate namespace",
+            "use std::allocator<T> for C++17 over-aligned allocation"
+          ]
+        },
+        {
+          "upstream_path": "LICENSE",
+          "path": "licenses/folly-APACHE-2.0.txt",
+          "sha256": "2206c00af7013581ae0d7c8c8a0089f02fab621913daac019b32336bd4d1e1db",
+          "modified": false
+        }
+      ]
+    },
+    {
+      "name": "oneTBB",
+      "repository": "https://github.com/uxlfoundation/oneTBB",
+      "commit": "67ba9556f4364507418c5b4f7a642ee1eead3706",
+      "files": [
+        {
+          "upstream_path": "include/oneapi/tbb/detail/_aggregator.h",
+          "path": "include/cstl/detail/tbb/aggregator.hpp",
+          "sha256": "d59f62928f2f11fe0d83dba7fe6676d12908f4f787814f9317fd02bfd6010945",
+          "modified": true,
+          "original_copy": "provenance/oneTBB/_aggregator.h",
+          "source_sha256": "9b2c0fb767d1bd8daf22f4bb481a0864b7b205c94bff92d436fbb5c83dc33e63",
+          "changes": [
+            "remove ITT/profiling dependencies",
+            "use standard acquire polling with periodic yield",
+            "isolate namespace and replace private assertion macros"
+          ]
+        },
+        {
+          "upstream_path": "include/oneapi/tbb/concurrent_priority_queue.h",
+          "path": "include/cstl/detail/tbb/priority_queue.hpp",
+          "sha256": "6d46a22bed4a79feb756001aa5dad544e2f5f5d6b06961f4dc1816c2cfd477f9",
+          "modified": true,
+          "original_copy": "provenance/oneTBB/concurrent_priority_queue.h",
+          "source_sha256": "38568cb2ba764f0ac0b8c949b7276ef64ff2305623f89224fe4c601a6299f5af",
+          "changes": [
+            "use extracted aggregator without oneTBB runtime",
+            "use standard allocator and bad_alloc",
+            "isolate namespace and remove deduction guides",
+            "replace padding arrays with alignas(64)",
+            "always enable exception handling; facade restricts throwing move/comparison"
+          ]
+        },
+        {
+          "upstream_path": "LICENSE.txt",
+          "path": "licenses/oneTBB-APACHE-2.0.txt",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+          "modified": false
+        }
+      ]
+    },
+    {
+      "name": "libcds",
+      "repository": "https://github.com/khizmax/libcds",
+      "commit": "9985d2a87feaa3e92532e28f4ab762a82855a49c",
+      "files": [
+        {
+          "upstream_path": "cds/container/vyukov_mpmc_cycle_queue.h",
+          "path": "include/cstl/bounded_queue.hpp",
+          "sha256": "d1b0e88e20fda69a15cd6cd5eb637fa2dede06a416693d96c6a6194abe20ddc5",
+          "modified": true,
+          "original_copy": "provenance/libcds/vyukov_mpmc_cycle_queue.h",
+          "source_sha256": "e97856f88d5ffbad5117eef751e2a30402a34a2a38c4f2428d300d84c136844c",
+          "changes": [
+            "extract reservation and publication loops",
+            "replace traits, buffers and atomics with standard C++",
+            "use explicit lifetimes without default-constructing payloads",
+            "check capacity and restrict payload operations to noexcept",
+            "subtract unsigned counters before converting difference",
+            "remove optional counters and use yield backoff"
+          ]
+        },
+        {
+          "upstream_path": "LICENSE",
+          "path": "licenses/libcds-BOOST-1.0.txt",
+          "sha256": "8d8291caf1cee26d23acf3eb67c9f9a2d58f1c681b16a4fbe8cbfb9e3c0b5a9b",
+          "modified": false
+        }
+      ]
+    }
+  ]
+}
