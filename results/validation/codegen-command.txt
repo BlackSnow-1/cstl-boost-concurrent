@@ -1,0 +1,7 @@
+Run in an MSVC x64 developer terminal from the repository root:
+cl /nologo /std:c++17 /EHsc /O2 /Gy /DNDEBUG /DCSTL_CODEGEN_MAIN /Fecodegen.exe /Focodegen.obj /Iinclude tools/codegen.cpp /link /OPT:REF /OPT:ICF
+codegen.exe
+Result: {"read_folded":true,"update_folded":true,"insert_folded":true}
+This is a compiler-specific code-generation experiment for uint64 keys/values, not a universal performance proof.
+
+For string-key probes, add /DCSTL_CODEGEN_STRING to the same compile command. Both modes report all three fields true in this experiment.

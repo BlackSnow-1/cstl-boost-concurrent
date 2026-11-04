@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(cstl VERSION 0.1.0 LANGUAGES CXX)
+project(cstl VERSION 0.2.0 LANGUAGES CXX)
 
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
@@ -37,6 +37,9 @@ endfunction()
 
 if(CSTL_BUILD_TESTS)
     enable_testing()
+    cstl_executable(cstl_boost_map_tests tests/boost_map.cpp)
+    add_test(NAME cstl_boost_map COMMAND cstl_boost_map_tests)
+    set_tests_properties(cstl_boost_map PROPERTIES TIMEOUT 120)
     cstl_executable(cstl_tests tests/containers.cpp)
     add_test(NAME cstl_containers COMMAND cstl_tests)
     set_tests_properties(cstl_containers PROPERTIES TIMEOUT 90)
@@ -59,8 +62,14 @@ write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/cstlConfigVersion.c
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/cstlConfig.cmake
     ${CMAKE_CURRENT_BINARY_DIR}/cstlConfigVersion.cmake
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cstl)
-install(FILES LICENSE NOTICE.md THIRD_PARTY.md README.md SELECTION.md VALIDATION.md vendor_manifest.json
+install(FILES LICENSE NOTICE.md THIRD_PARTY.md README.md SELECTION.md VALIDATION.md PERFORMANCE.md CHANGELOG.md vendor_manifest.json
     DESTINATION ${CMAKE_INSTALL_DATADIR}/cstl)
 install(DIRECTORY licenses/ DESTINATION ${CMAKE_INSTALL_DATADIR}/cstl/licenses)
 install(DIRECTORY provenance/ DESTINATION ${CMAKE_INSTALL_DATADIR}/cstl/provenance)
 install(FILES validation-results.txt DESTINATION ${CMAKE_INSTALL_DATADIR}/cstl OPTIONAL)
+
+if(CSTL_BUILD_BENCHMARKS)
+    cstl_executable(cstl_compare benchmarks/compare.cpp)
+endif()
+
+include(cmake/BoostUpstreamTests.cmake)

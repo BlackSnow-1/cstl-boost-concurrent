@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-11-04T22:14:11+0800",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "processor": "Intel64 Family 6 Model 158 Stepping 10, GenuineIntel",
+  "logical_processors": 12,
+  "repeats": 7,
+  "target_seconds": 0.06,
+  "seed": 20261104,
+  "compiler": "MSVC 19.44.35213 x64 /O2 /Ob2 /DNDEBUG C++17",
+  "rows": 1008,
+  "cases": 48,
+  "notes": "Single machine; randomized sequential processes; pilot calibration; no CPU pinning; confidence intervals are paired bootstrap of median throughput ratios, not proof of equivalence."
+}

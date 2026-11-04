@@ -1,6 +1,8 @@
-# CSTL — 源码自包含的 C++ 并发容器库
+# cstl-boost-concurrent
 
-CSTL 0.1.0 面向**通用并发读写，兼顾吞吐和易用性**。它从成熟项目中选取适合的数据结构，把必要源码和许可证一起带入，提供统一的 `cstl::` 接口。
+源码自包含的 C++17 并发容器库。
+
+CSTL 0.2.0 面向**通用并发读写，兼顾吞吐和易用性**。它从成熟项目中选取适合的数据结构，把必要源码和许可证一起带入，提供统一的 `cstl::` 接口。
 
 **使用时无需安装、链接或下载 Boost、oneTBB、Folly、libcds、parallel-hashmap 或 ConcurrentQueue。** 需要 C++17 标准库和系统线程支持；阻塞队列还使用系统信号量。构建过程没有联网步骤。它是可测试的初版，尚不应视为已通过生产环境长期验证的 STL 替代品。
 
@@ -10,7 +12,7 @@ CSTL 0.1.0 面向**通用并发读写，兼顾吞吐和易用性**。它从成�
 
 | 类型 | 选用的核心实现 | 本版保留的优势 |
 |---|---|---|
-| `concurrent_unordered_map<Key,T,Hash,Equal,ShardBits>` | parallel-hashmap 的分片 flat hash map | 紧凑存储、分片读写锁、并发插入/更新/删除；提供安全访问接口 |
+| `concurrent_unordered_map<Key,T,Hash,Equal,ShardBits>` | Boost 1.87.0 官方 `concurrent_flat_map` 完整源码 | 开放寻址、分组读写自旋锁、原生原子复合操作；源码未修改 |
 | `concurrent_unordered_set<Key,Hash,Equal,ShardBits>` | parallel-hashmap 的分片 flat hash set | 分片并发、查重与删除、紧凑存储 |
 | `concurrent_queue<T>` | moodycamel ConcurrentQueue | MPMC、生产者分流、显式 token、批量入队/出队 |
 | `blocking_queue<T>` | moodycamel BlockingConcurrentQueue | MPMC、信号量等待、限时等待，避免空队列持续轮询 |
@@ -87,16 +89,17 @@ MPMC = 多生产者、多消费者；SPSC = 单生产者、单消费者。
 
 ## 哈希容器的使用边界
 
-- 使用 `std::shared_mutex` 分片锁，默认 `ShardBits=4`，即 16 个分片；允许 `0..8`。同一 key 的更新会串行化。热点 key、差的哈希分布或长回调会限制吞吐；不保证锁公平性。
+- Map 使用 Boost 原生容器级与槽组级读写锁；不额外套外部锁。`ShardBits` 保留 `0..8` 的源码兼容性，但不再控制 Map 分片数。Set 仍使用 parallel-hashmap 分片 `std::shared_mutex`。同一 key 的更新会串行化；热点 key、差的哈希分布或长回调会限制吞吐。
 - `try_emplace`、`insert`、`insert_or_assign` 返回 `bool` 表示是否新插入，**不返回迭代器**。`insert_or_assign` 返回 `false` 也可能已成功更新旧值。
-- `try_emplace_or_visit(key, callback, args...)` 在一个分片锁内完成“缺失则构造，否则更新”；回调仅在元素原先存在时调用。
+- `try_emplace_or_visit(key, callback, args...)` 在底层一次受保护操作内完成“缺失则构造，否则更新”；回调仅在元素原先存在时调用。
 - `visit(key, f)` 传入 `T&`，`cvisit(key, f)` 传入 `const T&`，返回是否找到 key。`find(key)` 返回 `std::optional<T>` 副本；`find/snapshot` 仅在元素可复制时可用。移动专属值可通过 visitor 访问。
 - **回调执行期间不能重新访问同一容器，也不要持有一个容器的锁再访问另一个容器。** 跨容器反向加锁可能死锁；引用和指针不能从回调逃逸。回调保持短小，避免 I/O、等待或未知锁。
 - `contains` 后紧接着 `find/erase` 是两个独立操作；需要复合原子操作时使用 visitor 或 `erase_if(key,predicate)`。不支持跨 key/跨容器事务。
-- `size()` 会逐分片加锁读取，`reserve()` 会逐分片加锁预留；避开了底层平行表直接读取元数据的路径。
-- `size/empty/snapshot/clear/reserve` **不构成全表原子操作或一致性快照**。它们逐分片执行；并发时不同分片可能来自不同时间点，`clear()` 返回后仍可能有其他线程新写入。需要精确全表状态时，先停止外部写入。
-- `reserve(n)` 按平均分布为各分片预留空间，不保证任意偏斜分布下完全不扩容。扩容仍占用相应分片锁。
+- Map 的 `size()`、`reserve()`、`clear()` 直接采用 Boost 官方实现；Set 的 `size/reserve` 仍逐分片加锁。
+- Map 的 `snapshot()` 使用 `cvisit_all`，不提供全表一致性快照；`size()` 不能与其他操作组成事务。Boost 的 `reserve/clear` 使用容器级排他访问；`clear()` 返回后其他线程仍可写入。Set 全表操作仍逐分片执行。需要精确外部一致性时，先停止写入。
+- Map 的 `reserve(n)` 按 Boost 官方全表策略预留容量，扩容取得容器级排他访问；Set 按平均分布预留各分片，不保证偏斜分布下完全不扩容。
 - Hash/Equal 必须对并发调用安全，键在容器中保持哈希/相等关系稳定。复杂用户类型、抛异常的哈希/比较/移动/构造及分配失败的完整异常恢复尚未验证；不承诺 STL 的强异常保证。可靠服务应使用稳定的无异常热路径类型并处理资源耗尽。
+- 随包 `boost/` 固定为 1.87.0；同一工程需要其他 Boost 组件时，应保持版本一致。临时可复制的 visitor 可能由 Boost 复制，有状态回调可传左值或 `std::ref`。
 - 本版没有自定义 allocator、带状态 Hash/Equal 的构造参数或异构查询接口；不能把这一层当作上游全部 API 的转发。
 
 ## 快速使用
@@ -170,3 +173,23 @@ python tools/verify_vendor.py
 精确 commit、原始文件位置、SHA-256 和移植改动见 [vendor_manifest.json](vendor_manifest.json)。未修改源码直接保留；移植版本在文件顶部标注变化，原件保存在 `provenance/`。默认构建不会编译原件。
 
 新接口与测试采用 MIT；第三方源码分别保留 Apache-2.0、Boost-1.0、BSD 和 zlib 等原许可证，不能把整个库统一说成仅 MIT。详见 [THIRD_PARTY.md](THIRD_PARTY.md)、[NOTICE.md](NOTICE.md) 和 `licenses/`。
+
+## Boost 替换与可复现对比
+
+项目在 `baseline-handoff` Git 标签保留压缩包原始版本。原 Map 头文件另保存在 `provenance/cstl/`；benchmark 对照仅改变命名空间和 include 路径。
+
+Boost 1.87.0 官方归档及 commit、SHA-256 记录于 `vendor_manifest.json`。`include/boost/` 包含完整 Unordered 实现和递归依赖，算法、锁、探测、扩容及内存序均未改动。CSTL 只适配 mapped-value visitor、复制查找和快照接口；热点转发函数沿用 Boost 的强制内联方式。没有重新实现 Boost 算法。
+
+```sh
+cmake -S . -B build-release -DCMAKE_BUILD_TYPE=Release -DCSTL_BUILD_TESTS=ON -DCSTL_BUILD_EXAMPLES=ON -DCSTL_BUILD_BENCHMARKS=ON
+cmake --build build-release --config Release
+ctest --test-dir build-release -C Release --output-on-failure
+python tools/verify_vendor.py
+python tools/benchmark.py --exe build-release/cstl_compare --output results
+```
+
+Windows 使用 `.exe`；多配置生成器使用 `build-release/Release/cstl_compare.exe`。MSVC 可指定 `-DCMAKE_POLICY_DEFAULT_CMP0141=NEW -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Embedded` 避免 PDB 服务依赖。
+
+`-DCSTL_BUILD_UPSTREAM_TESTS=ON` 额外构建官方并发容器核心测试。Serialization 和跨进程测试依赖额外编译型 Boost 库，不在本头文件库的核心测试范围；具体执行范围见 `VALIDATION.md`。
+
+性能矩阵同时比较压缩包的 parallel-hashmap 原版、直接 Boost 与 CSTL 封装；包括整数/字符串键、1/4/12 线程、65536 键及 64 热键、读取/未命中/更新/复合更新/混合/删除重插/预留插入/增长插入。每次检查正确性，随机交错运行，保留原始样本和置信区间。结果与限制见 `PERFORMANCE.md`，不能把有限硬件上的测量解释成所有负载性能完全相同。

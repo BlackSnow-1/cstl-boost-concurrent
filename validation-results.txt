@@ -1,18 +1,9 @@
-CSTL 0.1.0 validation
-Date: 2026-11-04
-Platform: Windows x64; MSVC 19.38.33130; C++17; CMake 3.27; Ninja
-
-Release: PASS
-PASS: 11 suites; map/set growth, erase, observation, hot keys; MPMC 80,000 + bounded 60,000 + SPSC 150,000 messages; priority ordering and concurrent handoff; blocking waits
-Release build: no MSVC compiler warnings/errors
-Debug: PASS
-PASS: 11 suites; map/set growth, erase, observation, hot keys; MPMC 80,000 + bounded 60,000 + SPSC 150,000 messages; priority ordering and concurrent handoff; blocking waits
-Debug build: no MSVC compiler warnings/errors
-
-Installed package consumer (find_package): PASS
-8 independently included public headers (/W4 /WX): PASS
-OK: 19 upstream files match the manifest (integrity check, not a security audit).
-
-Example observed: requests=40000; job=hello
-Not run: ThreadSanitizer, Linux/macOS/ARM, full upstream performance comparisons, long-duration soak, allocation-failure injection.
-See VALIDATION.md and README.md for scope and concurrency boundaries.
+2026-11-04 Windows x64 MSVC 19.44.35213 C++17
+Original handoff Release: 11 suites PASS
+Final project Release and Debug: 16 suites PASS each
+Final Release CTest including Boost core: 34/34 PASS (41.88 seconds)
+Installed consumer + 8 standalone public headers /W4 /WX: PASS
+Vendor integrity: 2082 recorded upstream files PASS
+MSVC ICF: read/update/insert facade-native pairs all folded
+Performance: see PERFORMANCE.md and results/raw.csv
+Scope and unexecuted checks: see VALIDATION.md

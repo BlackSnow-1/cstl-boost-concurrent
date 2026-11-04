@@ -1,0 +1,16 @@
+{
+  "timestamp": "2026-11-04T22:48:03+0800",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "processor": "Intel64 Family 6 Model 158 Stepping 10, GenuineIntel",
+  "logical_processors": 12,
+  "repeats": 21,
+  "target_seconds": 0.5,
+  "seed": 20261104,
+  "compiler": "MSVC 19.44.35213 x64 /O2 /Ob2 /DNDEBUG C++17",
+  "rows": 63,
+  "cases": 1,
+  "binary_sha256": "d886c4491be293e2424f9f794bd99957607695ace6b1f7304bdc74e028bb8a1c",
+  "facade_sha256": "4aa938e57c3a2cbd1f77a5d895c0a829accf7e4c59db6bf0348a41edb4d5a562",
+  "visitor_sha256": "60fe0fad4e10465f62e93f3393687b202fe811bc206a6a2a79fda6af144c97af",
+  "notes": "Single machine; randomized sequential processes; pilot calibration; no CPU pinning; confidence intervals are paired bootstrap of median throughput ratios, not proof of equivalence."
+}

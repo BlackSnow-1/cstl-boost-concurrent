@@ -1,0 +1,5 @@
+* -text
+include/boost/** -whitespace
+tests/upstream/** -whitespace
+provenance/** -whitespace
+results/** -whitespace

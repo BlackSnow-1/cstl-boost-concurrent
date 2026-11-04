@@ -1,39 +1,37 @@
-# 验证记录
+# 验证记录（2026-11-04）
 
-日期：2026-11-04。
+本记录来自本次运行；压缩包历史记录保存在 `provenance/cstl/`，不混算为本次验证。
 
-环境：Windows x64，MSVC 19.38.33130，C++17，CMake 3.27，Ninja。Release 使用 `/O2`；Debug 开启调试/运行时检查。此记录只描述本次实际覆盖范围，不构成对所有线程交错的证明。
+## 本机已执行
 
-## 功能和并发检查
+平台为 Windows x64、Intel64 Family 6 Model 158 Stepping 10（12 逻辑处理器）、MSVC 19.44.35213、C++17、Ninja。Release 为 `/O2 /Ob2 /DNDEBUG`，Debug 为 `/Od`；采用 Embedded 调试信息避免本机 PDB 服务限制。
 
-`tests/containers.cpp` 包含 11 组检查，使用不会被 `NDEBUG` 移除的检查宏。
+- 原始压缩包版本：Release 全部 11 套测试通过，示例通过。
+- 最终版本：Release 和 Debug 各通过全部 16 套项目测试（原 11 套 + 新增 5 套）。CTest 将它们注册为两个测试程序。
+- 最终 Release：额外通过 Boost 1.87 官方并发核心的全部 32 个测试程序。合计 **34/34 CTest 程序通过，0 失败**，总耗时 41.88 秒。
+- 五套扩展检查：20 万次随机差分操作；异常恢复和移动对象生命周期；12 线程 60 万次原子计数及条件删除；自定义 Hash/Equal/ShardBits 兼容；有状态左值、移动专属及仅接受右值的回调。
+- 原 11 套保留 Map/Set 增长/删除/并发观察、MPMC 80000 条消息、有界 MPMC 60000 条、SPSC 150000 条、阻塞等待、优先级和生命周期检查。
+- 安装后独立工程通过 `find_package(cstl CONFIG REQUIRED)` 构建并运行；8 个公开头文件分别在 MSVC `/W4 /WX` 下单独包含编译通过。
+- 官方归档 SHA-256 与发布方一致；`tools/verify_vendor.py` 校验 **2082** 个来源记录全部匹配。生产和测试依赖均保留原文件内容；MPL/Preprocessor 宏选择路径额外完整收录。
+- `tools/codegen.cpp` 的 MSVC `/O2 /Gy /DNDEBUG`、链接器 `/OPT:REF /OPT:ICF` 实验：uint64 和 string 读取、更新、插入与直接 Boost 的函数地址分别相同，即链接器识别为相同机器码。结果见 `results/codegen.json` 和 `results/codegen-string.json`。
 
-- Map/Set：插入、重复插入、覆盖、复制查找、访问回调、条件删除、移动专属值、回调抛异常后的解锁。
-- 故意碰撞的哈希表：插入、删除和存活元素查找。
-- 热点 Map：6 个线程共 90,000 次复合更新；并发观察大小、复制遍历及预留空间；检查最终总数。
-- Map/Set：4 个写线程增长及删除，读线程同时查找与预留；验证可观察值内部一致性及最终集合。
-- 通用队列：token、批量接口、移动专属值、单生产者 FIFO。
-- 通用 MPMC：4 生产者、4 消费者，80,000 条带唯一 ID 的消息，逐条验证恰好消费一次。
-- 阻塞队列：空队列限时/零/负时长、等待唤醒、20,000 条消息与单生产者哨兵退出。
-- SPSC：150,000 条消息严格顺序，非二次幂逻辑容量、第三线程观察、容量错误、过对齐和移动专属类型。
-- 有界 MPMC：满/空、容量校验、槽位复用、移动专属类型；4 生产者、4 消费者验证 60,000 条消息恰好消费一次。
-- 优先队列：并发插入 20,000 个元素后严格降序排出；最小堆；另有并发推入/弹出的 20,000 条唯一 ID 交接。
-- 对象生命周期：出队、未消费元素析构、环形槽复用、各队列资源释放；SPSC 构造异常后恢复使用。
+## 复现
 
-## 包装与分发检查
+```sh
+cmake -S . -B build-release -DCMAKE_BUILD_TYPE=Release -DCSTL_BUILD_TESTS=ON -DCSTL_BUILD_EXAMPLES=ON -DCSTL_BUILD_BENCHMARKS=ON -DCSTL_BUILD_UPSTREAM_TESTS=ON
+cmake --build build-release --config Release --parallel 3
+ctest --test-dir build-release -C Release --output-on-failure
+python tools/verify_vendor.py
+```
 
-- Debug、Release 均编译并运行上述测试。
-- 示例程序验证 4 线程计数结果为 40,000，并完成一次阻塞队列交接。
-- 检查每个公开头文件可以单独包含并编译。
-- 执行 CMake 安装，并通过独立 consumer 的 `find_package(cstl CONFIG REQUIRED)` 构建运行。
-- 离线比对 `vendor_manifest.json` 中提取/修改文件及原件的 SHA-256。
+Debug 单独配置 `-DCMAKE_BUILD_TYPE=Debug`。MSVC 如遇本机 PDB 问题可加 `-DCMAKE_POLICY_DEFAULT_CMP0141=NEW -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Embedded`。
 
-这些步骤的具体完成状态以发行包附带的 `validation-results.txt` 为准。
+性能复现命令和结果见 `PERFORMANCE.md`。测试日志保存在 `results/validation/`。
 
-## 性能覆盖范围
+## 验证边界
 
-随附 `benchmarks/map.cpp` 只比较预填充整数哈希表更新与 `std::unordered_map + mutex`，并校验两者总数。结果受运行时资源、频率、线程调度和编译参数影响，未形成可靠的跨库排名。
+32 个官方程序对应 Boost.Unordered 的核心 concurrent 容器测试（包含 flat/node Map/Set、读写锁、异常恢复等）。官方 Serialization 和跨进程测试需要额外编译型 Boost 库，不在本项目头文件库的核心测试范围；没有把它们标为通过，也没有声称执行整个 Boost 全库测试。
 
-**没有完成**全部上游候选之间的统一吞吐/P99/内存对比、真实业务压测、长期耐久测试、故障注入/资源耗尽、形式化验证，或 Linux/macOS/ARM 上的运行。本机没有运行 ThreadSanitizer；通过 Windows 测试不等同于已证明弱内存平台上的正确性。
+本机没有运行 ThreadSanitizer、ARM、长期耐久、完整分配失败注入或实际业务负载。性能矩阵测试吞吐，未测逐操作 P50/P99 或独立的容器峰值内存；有限实验不能证明所有类型、平台及负载都性能等同。
 
-移植后已替换部分支持代码，上游自身的验证不能完整转移到本库。生产使用前应补充目标平台的 TSan、实际消息类型、负载与关闭协议测试。
+GitHub Actions 提供 Windows/Linux/macOS Debug/Release 和 Linux 上游核心测试，远端结果以工作流记录为准。
