@@ -26,6 +26,8 @@ python tools/verify_vendor.py
 
 Debug 单独配置 `-DCMAKE_BUILD_TYPE=Debug`。MSVC 如遇本机 PDB 问题可加 `-DCMAKE_POLICY_DEFAULT_CMP0141=NEW -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Embedded`。
 
+Git 存储内容可额外运行 `python tools/verify_vendor.py --git-ref HEAD` 校验。最初 Git 导入曾规范化 12 个旧第三方文件的换行；后续提交恢复为原包字节，保持原清单 SHA 不变。
+
 性能复现命令和结果见 `PERFORMANCE.md`。测试日志保存在 `results/validation/`。
 
 ## 验证边界
