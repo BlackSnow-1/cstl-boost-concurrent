@@ -1,4 +1,4 @@
-# 验证记录（2026-11-04）
+# 验证记录（2026-11-04–2026-11-05）
 
 本记录来自本次运行；压缩包历史记录保存在 `provenance/cstl/`，不混算为本次验证。
 
@@ -36,4 +36,4 @@ Git 存储内容可额外运行 `python tools/verify_vendor.py --git-ref HEAD` �
 
 本机没有运行 ThreadSanitizer、ARM、长期耐久、完整分配失败注入或实际业务负载。性能矩阵测试吞吐，未测逐操作 P50/P99 或独立的容器峰值内存；有限实验不能证明所有类型、平台及负载都性能等同。
 
-GitHub Actions 提供 Windows/Linux/macOS Debug/Release 和 Linux 上游核心测试，远端结果以工作流记录为准。
+GitHub Actions 已通过 Windows/Linux/macOS Debug/Release 六组项目测试，以及 Linux 上全部 32 个官方核心测试（7/7 jobs 成功）。验证代码提交为 `efa0261e0bf0b5571f44b4f0224ca11cd5c8722b`；后续提交仅补充文档与 CI 结果，不修改测试过的 C++ 源码。工作流： https://github.com/BlackSnow-1/cstl-boost-concurrent/actions/runs/41933238420 ，机器可读结果见 `results/validation/ci.json`。
