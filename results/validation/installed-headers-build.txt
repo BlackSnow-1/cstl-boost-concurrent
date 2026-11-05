@@ -1,6 +1,3 @@
-[1/1] Cleaning all built files...
-Cleaning... 10 files.
-
 [1/10] Building CXX object CMakeFiles\header_blocking_queue.dir\blocking_queue.cpp.obj
 [2/10] Building CXX object CMakeFiles\header_bounded_queue.dir\bounded_queue.cpp.obj
 [3/10] Building CXX object CMakeFiles\header_concurrent_priority_queue.dir\concurrent_priority_queue.cpp.obj

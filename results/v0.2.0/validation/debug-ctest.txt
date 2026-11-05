@@ -1,0 +1,10 @@
+Internal ctest changing into directory: D:/GitHubProjects/cstl-boost-concurrent/build-debug
+Test project D:/GitHubProjects/cstl-boost-concurrent/build-debug
+    Start 1: cstl_boost_map
+1/2 Test #1: cstl_boost_map ...................   Passed    9.34 sec
+    Start 2: cstl_containers
+2/2 Test #2: cstl_containers ..................   Passed    0.34 sec
+
+100% tests passed, 0 tests failed out of 2
+
+Total Test time (real) =   9.69 sec

@@ -1,0 +1,14 @@
+[1/1] Cleaning all built files...
+Cleaning... 10 files.
+
+[1/10] Building CXX object CMakeFiles\header_blocking_queue.dir\blocking_queue.cpp.obj
+[2/10] Building CXX object CMakeFiles\header_bounded_queue.dir\bounded_queue.cpp.obj
+[3/10] Building CXX object CMakeFiles\header_concurrent_priority_queue.dir\concurrent_priority_queue.cpp.obj
+[4/10] Building CXX object CMakeFiles\consumer.dir\main.cpp.obj
+C:\Users\Administrator.DESKTOP-O5D0MDL\Documents\Codex\2026-11-04\ang\work\consumer\main.cpp(2): warning C4834: 放弃具有 [[nodiscard]] 属性的函数的返回值
+[5/10] Building CXX object CMakeFiles\header_concurrent_queue.dir\concurrent_queue.cpp.obj
+[6/10] Building CXX object CMakeFiles\header_concurrent_unordered_set.dir\concurrent_unordered_set.cpp.obj
+[7/10] Building CXX object CMakeFiles\header_concurrent_unordered_map.dir\concurrent_unordered_map.cpp.obj
+[8/10] Building CXX object CMakeFiles\header_spsc_queue.dir\spsc_queue.cpp.obj
+[9/10] Linking CXX executable consumer.exe
+[10/10] Building CXX object CMakeFiles\header_cstl.dir\cstl.cpp.obj

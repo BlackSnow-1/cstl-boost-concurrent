@@ -19,8 +19,9 @@ headers remain present, so applications that also include different upstream
 versions in the same translation unit need to check for conflicts. This initial
 release does not promise coexistence with arbitrary versions of the same library.
 
-Boost.Unordered's visitor API is a design reference; no Boost.Unordered source
-is included. This project does not claim endorsement by any upstream author.
+The complete Boost.Unordered source and required headers are included; CSTL's
+visitor facade exposes the mapped value. This project does not claim endorsement
+by any upstream author.
 
 When redistributing source or binaries, preserve the corresponding notices and
 license materials. The root MIT license applies only to the newly authored CSTL
@@ -28,4 +29,6 @@ components; it does not relicense bundled third-party implementations.
 
 ## Boost 1.87.0
 
-Full Boost.Unordered implementation and recursively required headers are bundled unchanged under `include/boost/`; core upstream tests and test-only dependencies are under `tests/upstream/`. Official release commit `c89e6267665516192015a9e40955e154466f4f68`, archive SHA-256 `f55c340aa49763b1925ccf02b2e83f35fdcf634c9d5164a2acb87540173c741d`. License: `licenses/boost-LICENSE_1_0.txt`; original authorship retained in every file.
+Full Boost.Unordered implementation and recursively required headers are bundled under `include/boost/`; core upstream tests and test-only dependencies are under `tests/upstream/`. Official release commit `c89e6267665516192015a9e40955e154466f4f68`, archive SHA-256 `f55c340aa49763b1925ccf02b2e83f35fdcf634c9d5164a2acb87540173c741d`. License: `licenses/boost-LICENSE_1_0.txt`; original authorship retained in every file.
+
+In CSTL 0.3.0, `include/boost/unordered/detail/foa/core.hpp` has scoped load-limit and trivial-relocation changes. The pristine release file is preserved at `provenance/boost/unordered/detail/foa/core.hpp`; all source and modified SHA-256 values and explanations are in the manifest. Other Boost files and upstream tests are unchanged.

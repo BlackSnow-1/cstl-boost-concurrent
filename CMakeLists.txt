@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(cstl VERSION 0.2.0 LANGUAGES CXX)
+project(cstl VERSION 0.3.0 LANGUAGES CXX)
 
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
@@ -70,6 +70,10 @@ install(FILES validation-results.txt DESTINATION ${CMAKE_INSTALL_DATADIR}/cstl O
 
 if(CSTL_BUILD_BENCHMARKS)
     cstl_executable(cstl_compare benchmarks/compare.cpp)
+    cstl_executable(cstl_memory benchmarks/memory.cpp)
+    if(WIN32)
+        target_link_libraries(cstl_memory PRIVATE Psapi)
+    endif()
 endif()
 
 include(cmake/BoostUpstreamTests.cmake)

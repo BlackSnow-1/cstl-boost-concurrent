@@ -3,8 +3,10 @@
 CSTL includes selected source files and clearly marked ports from:
 
 - Boost.Unordered 1.87.0 and transitive Boost headers, original authors as
-  credited in each file; Boost Software License 1.0. Sources and core tests
-  are byte-for-byte copies of the official release; see vendor_manifest.json.
+  credited in each file; Boost Software License 1.0. Core tests and all Boost files except detail/foa/core.hpp are byte-for-byte
+  copies of the official release. The named core file has scoped CSTL load-limit
+  and trivial-relocation extensions; its original is retained under provenance/boost.
+  See vendor_manifest.json for exact changes and hashes.
 - Parallel Hashmap, Copyright (c) 2019, Gregory Popovitch. This includes work
   from Abseil, Copyright 2018 The Abseil Authors, with modifications made by
   upstream Parallel Hashmap. Apache License 2.0 applies, except separately

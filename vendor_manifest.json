@@ -11295,8 +11295,11 @@
         {
           "upstream_path": "boost/unordered/detail/foa/core.hpp",
           "path": "include/boost/unordered/detail/foa/core.hpp",
-          "sha256": "56e163496bc3fc6811cb6a1efdddfc5602495caa2858e57d69cac184b1c667f6",
-          "modified": false
+          "sha256": "a348222e9f84396486ab20a534385246d3675ba5e1baeb1f1d6dfe666f733ae4",
+          "modified": true,
+          "original_copy": "provenance/boost/unordered/detail/foa/core.hpp",
+          "source_sha256": "56e163496bc3fc6811cb6a1efdddfc5602495caa2858e57d69cac184b1c667f6",
+          "changes": "CSTL opt-in load limit 14/15 aligns growth thresholds with the original 16-slot table. Opt-in trivial copy construction during relocation preserves lifetime and allocator requirements. Inline transfer helpers. Untagged Boost Hash policies keep load limit 0.875 and original relocation dispatch."
         },
         {
           "upstream_path": "boost/unordered/detail/foa/cumulative_stats.hpp",

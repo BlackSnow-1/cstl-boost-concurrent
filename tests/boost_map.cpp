@@ -2,6 +2,7 @@
 #include <cstl/concurrent_unordered_map.hpp>
 #include <unordered_map>
 #include <random>
+#include <cstdint>
 #include <cctype>
 #include <string>
 #include <memory>
@@ -84,4 +85,35 @@ void visitor_forms(){
     CHECK(!m.try_emplace_or_visit(1,[p=std::make_unique<int>(2)](int& n){n+=*p;},0));
     CHECK(m.erase_if(1,[p=std::make_unique<int>(6)](const int& n){return n==*p;}));
 }
-int main(){try{randomized();exceptions_and_moves();concurrent_atomic();custom_hash();visitor_forms();std::cout<<"PASS: 5 extended map suites (200000 differential operations, exception/move lifetime, 600000 atomic updates, custom hash, visitor categories)\n";}catch(const std::exception& e){std::cerr<<e.what()<<"\n";return 1;}}
+struct CountedHash {
+    inline static std::atomic<int> calls{0};
+    std::size_t operator()(std::uint64_t n)const noexcept{++calls;return static_cast<std::size_t>(n*2654435761u);}
+};
+struct MoveKey {
+    inline static int live=0;int value;
+    explicit MoveKey(int n):value(n){++live;}
+    MoveKey(const MoveKey&)=delete;
+    MoveKey(MoveKey&& x)noexcept:value(x.value){x.value=-1;++live;}
+    ~MoveKey(){--live;}
+    friend bool operator==(const MoveKey& a,const MoveKey& b){return a.value==b.value;}
+};
+struct MoveKeyHash {std::size_t operator()(const MoveKey& k)const noexcept{return std::hash<int>{}(k.value);}};
+void prehash_and_relocation(){
+    cstl::concurrent_unordered_map<std::uint64_t,std::uint64_t,CountedHash> counted(256);
+    for(std::uint64_t i=0;i<32;++i)CHECK(counted.try_emplace(i,i));
+    CountedHash::calls=0;CHECK(counted.try_emplace(32,32));CHECK(CountedHash::calls==1);
+    CountedHash::calls=0;CHECK(!counted.try_emplace(1,99));CHECK(CountedHash::calls==1);
+    CountedHash::calls=0;CHECK(counted.cvisit(1,[](auto n){CHECK(n==1);}));CHECK(CountedHash::calls==1);
+    CountedHash::calls=0;CHECK(!counted.try_emplace_or_visit(1,[](auto& n){++n;},99));CHECK(CountedHash::calls==1);
+    {cstl::concurrent_unordered_map<MoveKey,int,MoveKeyHash> m;
+     for(int i=0;i<1000;++i)CHECK(m.try_emplace(MoveKey(i),i));
+     MoveKey duplicate(42);CHECK(!m.try_emplace(std::move(duplicate),99));CHECK(duplicate.value==42);
+     for(int i=0;i<1000;++i)CHECK(m.find(MoveKey(i))==i);
+     m.reserve(4000);CHECK(m.size()==1000);m.clear();CHECK(m.empty());CHECK(MoveKey::live==1);}
+    CHECK(MoveKey::live==0);
+    cstl::concurrent_unordered_map<std::uint64_t,std::uint64_t,std::hash<std::uint64_t>,std::equal_to<std::uint64_t>,0> growing;
+    for(std::uint64_t i=0;i<200000;++i)CHECK(growing.try_emplace(i,i^0xabcdefu));
+    CHECK(growing.size()==200000);
+    for(std::uint64_t i=0;i<200000;++i)CHECK(growing.find(i)==(i^0xabcdefu));
+}
+int main(){try{randomized();exceptions_and_moves();concurrent_atomic();custom_hash();visitor_forms();prehash_and_relocation();std::cout<<"PASS: 6 extended map suites (200000 differential operations, exception/move lifetime, 600000 atomic updates, custom hash, visitor categories)\n";}catch(const std::exception& e){std::cerr<<e.what()<<"\n";return 1;}}

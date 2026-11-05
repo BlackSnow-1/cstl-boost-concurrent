@@ -1,19 +1,19 @@
-# 验证记录（2026-11-04–2026-11-05）
+# 验证记录：CSTL 0.3.0（2026-11-05）
 
-本记录来自本次运行；压缩包历史记录保存在 `provenance/cstl/`，不混算为本次验证。
+本轮目标是消除相对压缩包原版的逐场景退步。0.2.0 的历史结果完整保存在 `results/v0.2.0/`，没有混算为本次验证。
 
-## 本机已执行
+## 本机执行
 
-平台为 Windows x64、Intel64 Family 6 Model 158 Stepping 10（12 逻辑处理器）、MSVC 19.44.35213、C++17、Ninja。Release 为 `/O2 /Ob2 /DNDEBUG`，Debug 为 `/Od`；采用 Embedded 调试信息避免本机 PDB 服务限制。
+Windows x64、12 逻辑处理器、MSVC 19.44.35213、C++17、Ninja；Release `/O2 /Ob2 /DNDEBUG`，Debug `/Od`，使用 Embedded 调试信息。
 
-- 原始压缩包版本：Release 全部 11 套测试通过，示例通过。
-- 最终版本：Release 和 Debug 各通过全部 16 套项目测试（原 11 套 + 新增 5 套）。CTest 将它们注册为两个测试程序。
-- 最终 Release：额外通过 Boost 1.87 官方并发核心的全部 32 个测试程序。合计 **34/34 CTest 程序通过，0 失败**，总耗时 41.88 秒。
-- 五套扩展检查：20 万次随机差分操作；异常恢复和移动对象生命周期；12 线程 60 万次原子计数及条件删除；自定义 Hash/Equal/ShardBits 兼容；有状态左值、移动专属及仅接受右值的回调。
-- 原 11 套保留 Map/Set 增长/删除/并发观察、MPMC 80000 条消息、有界 MPMC 60000 条、SPSC 150000 条、阻塞等待、优先级和生命周期检查。
-- 安装后独立工程通过 `find_package(cstl CONFIG REQUIRED)` 构建并运行；8 个公开头文件分别在 MSVC `/W4 /WX` 下单独包含编译通过。
-- 官方归档 SHA-256 与发布方一致；`tools/verify_vendor.py` 校验 **2082** 个来源记录全部匹配。生产和测试依赖均保留原文件内容；MPL/Preprocessor 宏选择路径额外完整收录。
-- `tools/codegen.cpp` 的 MSVC `/O2 /Gy /DNDEBUG`、链接器 `/OPT:REF /OPT:ICF` 实验：uint64 和 string 读取、更新、插入与直接 Boost 的函数地址分别相同，即链接器识别为相同机器码。结果见 `results/codegen.json` 和 `results/codegen-string.json`。
+- Release 和 Debug 均通过全部 **17 套项目测试**（原 11 套 + 6 套扩展），注册为 2 个 CTest 程序。
+- Release 还通过全部 **32 个 Boost 官方并发核心测试程序**，合计 **34/34 CTest 程序，0 失败**，40.17 秒。
+- 扩展测试包括 20 万次随机差分操作、异常恢复与对象生命周期、12 线程 60 万次原子计数、定制 Hash/Equal、回调类型、一次哈希检查、移动专属键及 20 万元素单片增长校验。
+- 安装后独立 consumer 构建运行成功；8 个公开头文件分别以 MSVC `/W4 /WX` 单独包含编译成功。
+- 原 11 套的 Map/Set 并发增删/观察、MPMC 80000、有界 MPMC 60000、SPSC 150000 条消息、阻塞等待和优先队列检查全部保留。
+- 2082 个来源记录及保留的原始文件 SHA-256 校验。修改过的 Boost core 使用独立的修改后 SHA，官方原件和原 SHA 均保留，没有改写原 SHA 掩盖变化。
+
+本轮没有增加每元素哈希元数据；完整的吞吐、固定参数重放及进程内存采样见 `PERFORMANCE.md`。
 
 ## 复现
 
@@ -22,18 +22,15 @@ cmake -S . -B build-release -DCMAKE_BUILD_TYPE=Release -DCSTL_BUILD_TESTS=ON -DC
 cmake --build build-release --config Release --parallel 3
 ctest --test-dir build-release -C Release --output-on-failure
 python tools/verify_vendor.py
+python tools/verify_vendor.py --git-ref HEAD
 ```
 
-Debug 单独配置 `-DCMAKE_BUILD_TYPE=Debug`。MSVC 如遇本机 PDB 问题可加 `-DCMAKE_POLICY_DEFAULT_CMP0141=NEW -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Embedded`。
-
-Git 存储内容可额外运行 `python tools/verify_vendor.py --git-ref HEAD` 校验。最初 Git 导入曾规范化 12 个旧第三方文件的换行；后续提交恢复为原包字节，保持原清单 SHA 不变。
-
-性能复现命令和结果见 `PERFORMANCE.md`。测试日志保存在 `results/validation/`。
+Debug 单独使用 `-DCMAKE_BUILD_TYPE=Debug`。MSVC 可加 `-DCMAKE_POLICY_DEFAULT_CMP0141=NEW -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Embedded`。测试日志在 `results/validation/`。
 
 ## 验证边界
 
-32 个官方程序对应 Boost.Unordered 的核心 concurrent 容器测试（包含 flat/node Map/Set、读写锁、异常恢复等）。官方 Serialization 和跨进程测试需要额外编译型 Boost 库，不在本项目头文件库的核心测试范围；没有把它们标为通过，也没有声称执行整个 Boost 全库测试。
+官方 32 个程序是 Boost.Unordered 的核心 concurrent 测试；Serialization 和跨进程测试需要额外编译型库，本轮未运行。没有运行整个 Boost 全库测试、ThreadSanitizer、长期耐久、完整分配失败注入或独立 ARM 专项测试。性能结论限定于已列出的本机负载，未测逐操作 P50/P99。
 
-本机没有运行 ThreadSanitizer、ARM、长期耐久、完整分配失败注入或实际业务负载。性能矩阵测试吞吐，未测逐操作 P50/P99 或独立的容器峰值内存；有限实验不能证明所有类型、平台及负载都性能等同。
+0.2.0 的 MSVC ICF 证明只针对旧的单个 Boost concurrent_flat_map 适配层，不作为 0.3.0 证据；探针源码归档在 `provenance/experiments/0.2/`。
 
-GitHub Actions 已通过 Windows/Linux/macOS Debug/Release 六组项目测试，以及 Linux 上全部 32 个官方核心测试（7/7 jobs 成功）。验证代码提交为 `efa0261e0bf0b5571f44b4f0224ca11cd5c8722b`；后续提交仅补充文档与 CI 结果，不修改测试过的 C++ 源码。工作流： https://github.com/BlackSnow-1/cstl-boost-concurrent/actions/runs/41933238420 ，机器可读结果见 `results/validation/ci.json`。
+GitHub Actions 当前版本结果记录于 `results/validation/ci.json`，包括 Windows/Linux/macOS Debug/Release 和 Linux 官方核心测试。

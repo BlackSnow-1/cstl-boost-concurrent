@@ -1,13 +1,13 @@
-# CSTL Boost 项目交接（2026-11-04）
+# CSTL Boost 0.3.0 交接（2026-11-05）
 
-项目目录：D:/GitHubProjects/cstl-boost-concurrent。GitHub：BlackSnow-1/cstl-boost-concurrent，私有仓库。CSTL 0.2.0，C++17，namespace/target 仍为 cstl/cstl::cstl。
+项目为 D:/GitHubProjects/cstl-boost-concurrent，私有 GitHub 仓库 BlackSnow-1/cstl-boost-concurrent。C++17，namespace/target 仍为 cstl/cstl::cstl。
 
-Map 已使用 Boost 1.87.0 官方 concurrent_flat_map 完整实现。include/boost 内源码未改动；vendor_manifest.json 记录官方归档 SHA、commit 和逐文件 SHA。MPL/Preprocessor 使用宏选择的依赖也完整收录。构建时无需网络、外部 Boost 或编译型 Boost 库。
+用户明确要求消除与压缩包原版的性能差距。0.3.0 改为完整 Boost unordered_flat_map + 原版粒度的分片 shared_mutex 和分片增长；ShardBits 再次控制实际分片数。透明预哈希查询避免一次单键操作重复调用 Hash；没有增加每元素哈希字段。回调直接转发，保留左值状态、移动专属及仅接受右值的类型。
 
-只重写 CSTL 接口和 mapped-value visitor 适配层，没有重写 Boost 探测、锁、内存序或扩容算法。临时可复制 visitor 按值保存以减少指针间接访问，左值及移动专属 visitor 按引用保存；保留原 visitor 状态语义。ShardBits 对 Map 仅为源码兼容参数；Set 继续使用 parallel-hashmap。其他六种容器核心和公开接口保持原样。
+Boost detail/foa/core.hpp 有经过记录的少量定制：内部 Hash 的 14/15 负载上限对齐正常表的增长阈值；只对平凡复制/析构且使用标准分配器的元素启用平凡复制构造搬迁，并内联搬迁辅助函数。未标记 Hash 保持官方负载上限与原搬迁分派。官方原件在 provenance/boost/；所有修改均可由 vendor_manifest.json 的 source_sha256、original_copy、sha256 和 changes 追溯。
 
-原始压缩包在 baseline-handoff 标签完整保留；原 Map、旧交接文档和旧验证记录保留在 provenance/cstl。benchmarks/baseline_map.hpp 仅调整原 Map 的命名空间与 include 路径，用于同二进制基线比较。
+0.2.0 结果完整归档到 results/v0.2.0/，其源码可通过历史提交 9f504ce 查看。该版原生 Boost 热点 ICF 证明不代表 0.3.0。原始压缩包导入为 baseline-handoff（最初 Git 导入有换行规范化）；当前树已恢复第三方原字节，原清单 SHA 不变。原接口位于 provenance/cstl/，benchmark 的旧版只改命名空间/include 路径。
 
-测试与性能：详见 VALIDATION.md、PERFORMANCE.md 和 results。基础测试为原 11 套，加 5 套 Map 扩展测试；可选官方并发核心测试为 32 个程序。Boost Serialization 和跨进程测试需要额外编译型库，不包含在核心测试范围。MSVC 代码生成证明只覆盖指定编译器的 uint64 读取/更新/插入，不得扩展成所有类型和负载零差异。
+全量测试为原 11 套 + 新 6 套，另外保留 32 个官方核心测试程序。验证及测量范围、原始样本和结果见 VALIDATION.md、PERFORMANCE.md、results/。不要以平均收益代替逐场景对照，也不要把有限场景的无显著回退解释为任意硬件、键类型或业务负载都严格等速。
 
-GitHub Actions 包括 Windows/Linux/macOS 的 Debug/Release，以及 Linux 官方核心测试。每次变更应运行相应验证；性能测量要与构建和其他测试隔离。不要根据单次 benchmark 改写第三方算法，也不要用缩小测试范围、改正确性语义或隐藏失败取得表面性能一致。
+其他六个容器不变。构建无需网络、外部 Boost 或编译型 Boost 库；许可证和原始版权均保留。

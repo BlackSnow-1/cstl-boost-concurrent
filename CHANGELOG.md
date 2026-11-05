@@ -1,5 +1,13 @@
 # Changes
 
+## 0.3.0 (2026-11-05)
+
+- Restore original shard-level shared/exclusive locking and local growth using complete Boost flat maps.
+- Hash a key once per operation through transparent prehashed queries, without adding per-element hash metadata.
+- Scope Boost core changes to the internal CSTL hasher: align growth limits and use trivial copy construction for eligible relocation; retain pristine provenance and verify both hashes.
+- Add hashing-count, move-only-key lifecycle and 200000-element relocation regression checks.
+- Retain 0.2.0 performance and validation records under results/v0.2.0.
+
 ## 0.2.0 (2026-11-04)
 
 - Replace the Map core with unmodified Boost 1.87.0 concurrent_flat_map and bundle its header dependencies.

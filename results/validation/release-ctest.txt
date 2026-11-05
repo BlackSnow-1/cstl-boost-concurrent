@@ -1,51 +1,51 @@
-Internal ctest changing into directory: D:/GitHubProjects/cstl-boost-concurrent/build-release
-Test project D:/GitHubProjects/cstl-boost-concurrent/build-release
+Internal ctest changing into directory: D:/GitHubProjects/cstl-boost-concurrent/build-parity-release
+Test project D:/GitHubProjects/cstl-boost-concurrent/build-parity-release
       Start  1: cstl_boost_map
- 1/34 Test  #1: cstl_boost_map ......................   Passed    0.58 sec
+ 1/34 Test  #1: cstl_boost_map ......................   Passed    0.44 sec
       Start  2: cstl_containers
  2/34 Test  #2: cstl_containers .....................   Passed    0.09 sec
       Start  3: boost_assign_tests
- 3/34 Test  #3: boost_assign_tests ..................   Passed    8.22 sec
+ 3/34 Test  #3: boost_assign_tests ..................   Passed    7.27 sec
       Start  4: boost_clear_tests
- 4/34 Test  #4: boost_clear_tests ...................   Passed    0.17 sec
+ 4/34 Test  #4: boost_clear_tests ...................   Passed    0.19 sec
       Start  5: boost_constructor_tests
- 5/34 Test  #5: boost_constructor_tests .............   Passed    2.52 sec
+ 5/34 Test  #5: boost_constructor_tests .............   Passed    2.22 sec
       Start  6: boost_emplace_tests
- 6/34 Test  #6: boost_emplace_tests .................   Passed    1.49 sec
+ 6/34 Test  #6: boost_emplace_tests .................   Passed    1.46 sec
       Start  7: boost_equality_tests
  7/34 Test  #7: boost_equality_tests ................   Passed    0.18 sec
       Start  8: boost_erase_tests
- 8/34 Test  #8: boost_erase_tests ...................   Passed    1.97 sec
+ 8/34 Test  #8: boost_erase_tests ...................   Passed    2.06 sec
       Start  9: boost_exception_assign_tests
  9/34 Test  #9: boost_exception_assign_tests ........   Passed    0.63 sec
       Start 10: boost_exception_constructor_tests
-10/34 Test #10: boost_exception_constructor_tests ...   Passed    0.34 sec
+10/34 Test #10: boost_exception_constructor_tests ...   Passed    0.29 sec
       Start 11: boost_exception_erase_tests
-11/34 Test #11: boost_exception_erase_tests .........   Passed    5.07 sec
+11/34 Test #11: boost_exception_erase_tests .........   Passed    5.03 sec
       Start 12: boost_exception_insert_tests
-12/34 Test #12: boost_exception_insert_tests ........   Passed    3.07 sec
+12/34 Test #12: boost_exception_insert_tests ........   Passed    3.01 sec
       Start 13: boost_exception_merge_tests
-13/34 Test #13: boost_exception_merge_tests .........   Passed    1.92 sec
+13/34 Test #13: boost_exception_merge_tests .........   Passed    1.84 sec
       Start 14: boost_explicit_alloc_ctor_tests
-14/34 Test #14: boost_explicit_alloc_ctor_tests .....   Passed    0.04 sec
+14/34 Test #14: boost_explicit_alloc_ctor_tests .....   Passed    0.03 sec
       Start 15: boost_extract_insert_tests
-15/34 Test #15: boost_extract_insert_tests ..........   Passed    0.07 sec
+15/34 Test #15: boost_extract_insert_tests ..........   Passed    0.06 sec
       Start 16: boost_fwd_tests
-16/34 Test #16: boost_fwd_tests .....................   Passed    0.03 sec
+16/34 Test #16: boost_fwd_tests .....................   Passed    0.02 sec
       Start 17: boost_insert_tests
-17/34 Test #17: boost_insert_tests ..................   Passed    6.14 sec
+17/34 Test #17: boost_insert_tests ..................   Passed    6.05 sec
       Start 18: boost_merge_tests
-18/34 Test #18: boost_merge_tests ...................   Passed    0.89 sec
+18/34 Test #18: boost_merge_tests ...................   Passed    0.85 sec
       Start 19: boost_node_handle_allocator_tests
-19/34 Test #19: boost_node_handle_allocator_tests ...   Passed    0.04 sec
+19/34 Test #19: boost_node_handle_allocator_tests ...   Passed    0.03 sec
       Start 20: boost_pmr_allocator_tests
 20/34 Test #20: boost_pmr_allocator_tests ...........   Passed    0.03 sec
       Start 21: boost_reentrancy_check_test
-21/34 Test #21: boost_reentrancy_check_test .........   Passed    0.06 sec
+21/34 Test #21: boost_reentrancy_check_test .........   Passed    0.05 sec
       Start 22: boost_rehash_tests
 22/34 Test #22: boost_rehash_tests ..................   Passed    0.13 sec
       Start 23: boost_rw_spinlock_test
-23/34 Test #23: boost_rw_spinlock_test ..............   Passed    0.02 sec
+23/34 Test #23: boost_rw_spinlock_test ..............   Passed    0.03 sec
       Start 24: boost_rw_spinlock_test2
 24/34 Test #24: boost_rw_spinlock_test2 .............   Passed    0.03 sec
       Start 25: boost_rw_spinlock_test3
@@ -53,7 +53,7 @@ Test project D:/GitHubProjects/cstl-boost-concurrent/build-release
       Start 26: boost_rw_spinlock_test4
 26/34 Test #26: boost_rw_spinlock_test4 .............   Passed    0.03 sec
       Start 27: boost_rw_spinlock_test5
-27/34 Test #27: boost_rw_spinlock_test5 .............   Passed    0.03 sec
+27/34 Test #27: boost_rw_spinlock_test5 .............   Passed    0.02 sec
       Start 28: boost_rw_spinlock_test6
 28/34 Test #28: boost_rw_spinlock_test6 .............   Passed    0.13 sec
       Start 29: boost_rw_spinlock_test7
@@ -61,14 +61,14 @@ Test project D:/GitHubProjects/cstl-boost-concurrent/build-release
       Start 30: boost_rw_spinlock_test8
 30/34 Test #30: boost_rw_spinlock_test8 .............   Passed    0.03 sec
       Start 31: boost_stats_tests
-31/34 Test #31: boost_stats_tests ...................   Passed    0.16 sec
+31/34 Test #31: boost_stats_tests ...................   Passed    0.15 sec
       Start 32: boost_swap_tests
-32/34 Test #32: boost_swap_tests ....................   Passed    0.53 sec
+32/34 Test #32: boost_swap_tests ....................   Passed    0.54 sec
       Start 33: boost_try_emplace_tests
 33/34 Test #33: boost_try_emplace_tests .............   Passed    1.44 sec
       Start 34: boost_visit_tests
-34/34 Test #34: boost_visit_tests ...................   Passed    5.43 sec
+34/34 Test #34: boost_visit_tests ...................   Passed    5.46 sec
 
 100% tests passed, 0 tests failed out of 34
 
-Total Test time (real) =  41.88 sec
+Total Test time (real) =  40.17 sec

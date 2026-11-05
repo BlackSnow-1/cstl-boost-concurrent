@@ -2,7 +2,7 @@
 
 源码自包含的 C++17 并发容器库。
 
-CSTL 0.2.0 面向**通用并发读写，兼顾吞吐和易用性**。它从成熟项目中选取适合的数据结构，把必要源码和许可证一起带入，提供统一的 `cstl::` 接口。
+CSTL 0.3.0 面向**通用并发读写，兼顾吞吐和易用性**。它从成熟项目中选取适合的数据结构，把必要源码和许可证一起带入，提供统一的 `cstl::` 接口。
 
 **使用时无需安装、链接或下载 Boost、oneTBB、Folly、libcds、parallel-hashmap 或 ConcurrentQueue。** 需要 C++17 标准库和系统线程支持；阻塞队列还使用系统信号量。构建过程没有联网步骤。它是可测试的初版，尚不应视为已通过生产环境长期验证的 STL 替代品。
 
@@ -12,7 +12,7 @@ CSTL 0.2.0 面向**通用并发读写，兼顾吞吐和易用性**。它从成�
 
 | 类型 | 选用的核心实现 | 本版保留的优势 |
 |---|---|---|
-| `concurrent_unordered_map<Key,T,Hash,Equal,ShardBits>` | Boost 1.87.0 官方 `concurrent_flat_map` 完整源码 | 开放寻址、分组读写自旋锁、原生原子复合操作；源码未修改 |
+| `concurrent_unordered_map<Key,T,Hash,Equal,ShardBits>` | Boost 1.87.0 完整 `unordered_flat_map`，分片读写锁 | 一次哈希、分片扩容、锁内复合更新；增长与平凡元素搬迁经过定制 |
 | `concurrent_unordered_set<Key,Hash,Equal,ShardBits>` | parallel-hashmap 的分片 flat hash set | 分片并发、查重与删除、紧凑存储 |
 | `concurrent_queue<T>` | moodycamel ConcurrentQueue | MPMC、生产者分流、显式 token、批量入队/出队 |
 | `blocking_queue<T>` | moodycamel BlockingConcurrentQueue | MPMC、信号量等待、限时等待，避免空队列持续轮询 |
@@ -89,17 +89,17 @@ MPMC = 多生产者、多消费者；SPSC = 单生产者、单消费者。
 
 ## 哈希容器的使用边界
 
-- Map 使用 Boost 原生容器级与槽组级读写锁；不额外套外部锁。`ShardBits` 保留 `0..8` 的源码兼容性，但不再控制 Map 分片数。Set 仍使用 parallel-hashmap 分片 `std::shared_mutex`。同一 key 的更新会串行化；热点 key、差的哈希分布或长回调会限制吞吐。
+- Map 和 Set 都使用 `ShardBits` 指定的分片 `std::shared_mutex`；允许 `0..8`，默认 4（16 分片）。Map 的每片使用 Boost flat map，Set 仍使用 parallel-hashmap。同一 key 的更新会串行化；热点 key、差的哈希分布或长回调会限制吞吐。
 - `try_emplace`、`insert`、`insert_or_assign` 返回 `bool` 表示是否新插入，**不返回迭代器**。`insert_or_assign` 返回 `false` 也可能已成功更新旧值。
 - `try_emplace_or_visit(key, callback, args...)` 在底层一次受保护操作内完成“缺失则构造，否则更新”；回调仅在元素原先存在时调用。
 - `visit(key, f)` 传入 `T&`，`cvisit(key, f)` 传入 `const T&`，返回是否找到 key。`find(key)` 返回 `std::optional<T>` 副本；`find/snapshot` 仅在元素可复制时可用。移动专属值可通过 visitor 访问。
 - **回调执行期间不能重新访问同一容器，也不要持有一个容器的锁再访问另一个容器。** 跨容器反向加锁可能死锁；引用和指针不能从回调逃逸。回调保持短小，避免 I/O、等待或未知锁。
 - `contains` 后紧接着 `find/erase` 是两个独立操作；需要复合原子操作时使用 visitor 或 `erase_if(key,predicate)`。不支持跨 key/跨容器事务。
-- Map 的 `size()`、`reserve()`、`clear()` 直接采用 Boost 官方实现；Set 的 `size/reserve` 仍逐分片加锁。
-- Map 的 `snapshot()` 使用 `cvisit_all`，不提供全表一致性快照；`size()` 不能与其他操作组成事务。Boost 的 `reserve/clear` 使用容器级排他访问；`clear()` 返回后其他线程仍可写入。Set 全表操作仍逐分片执行。需要精确外部一致性时，先停止写入。
-- Map 的 `reserve(n)` 按 Boost 官方全表策略预留容量，扩容取得容器级排他访问；Set 按平均分布预留各分片，不保证偏斜分布下完全不扩容。
+- Map/Set 的 `size()`、`reserve()` 和 `clear()` 都逐分片加锁；观察元数据时持锁。
+- `snapshot/size/reserve/clear` 都不提供全表一致性快照；`size()` 不能与其他操作组成事务。不同分片的观察可能来自不同时间点，`clear()` 返回后其他线程仍可写入。需要精确外部一致性时，先停止写入。
+- `reserve(n)` 按平均分布为每片预留空间，不保证偏斜分布下完全不扩容；Map/Set 均只在受影响分片中扩容。
 - Hash/Equal 必须对并发调用安全，键在容器中保持哈希/相等关系稳定。复杂用户类型、抛异常的哈希/比较/移动/构造及分配失败的完整异常恢复尚未验证；不承诺 STL 的强异常保证。可靠服务应使用稳定的无异常热路径类型并处理资源耗尽。
-- 随包 `boost/` 固定为 1.87.0；同一工程需要其他 Boost 组件时，应保持版本一致。临时可复制的 visitor 可能由 Boost 复制，有状态回调可传左值或 `std::ref`。
+- 随包 `boost/` 固定为 1.87.0；同一工程需要其他 Boost 组件时，应保持版本一致。Map 的回调在持锁期间直接调用，支持有状态左值、移动专属回调与仅接受右值的回调。
 - 本版没有自定义 allocator、带状态 Hash/Equal 的构造参数或异构查询接口；不能把这一层当作上游全部 API 的转发。
 
 ## 快速使用
@@ -158,7 +158,7 @@ cmake --install build --config Release --prefix /your/install/prefix
 
 安装后可通过 `find_package(cstl CONFIG REQUIRED)` 和 `cstl::cstl` 使用。头文件库本身没有待编译的第三方二进制。
 
-MSVC 建议使用 x64 Native Tools 终端或 Visual Studio CMake；GCC/Clang 直接编译示例可使用 `c++ -std=c++17 -O2 -pthread -Iinclude examples/basic.cpp`。本机实际验证平台为 Windows x64 / MSVC 19.44；GitHub Actions 已通过 Windows/Linux/macOS 的 Debug/Release 及 Linux 的 32 个 Boost 官方核心测试，记录见 `results/validation/ci.json`。没有单独安排 ARM 专项验证。预留的 `CSTL_ENABLE_TSAN=ON` 可用于支持 ThreadSanitizer 的 GCC/Clang 环境，**本次未运行 TSan**。
+MSVC 建议使用 x64 Native Tools 终端或 Visual Studio CMake；GCC/Clang 直接编译示例可使用 `c++ -std=c++17 -O2 -pthread -Iinclude examples/basic.cpp`。本机实际验证平台为 Windows x64 / MSVC 19.44；当前版本的 GitHub Actions 结果见 `results/validation/ci.json`；0.2.0 历史 CI 已归档到 `results/v0.2.0/validation/`。没有单独安排 ARM 专项验证。预留的 `CSTL_ENABLE_TSAN=ON` 可用于支持 ThreadSanitizer 的 GCC/Clang 环境，**本次未运行 TSan**。
 
 `cstl_benchmark [threads] [operations_per_thread]` 仅测预填充整数哈希表的更新，对照 `std::unordered_map + mutex`，并校验最终总数。它不比较全部候选库，也不覆盖队列、读多写少、热点 key 或尾延迟，不能用于证明全场景最快。
 
@@ -178,7 +178,7 @@ python tools/verify_vendor.py
 
 项目在 `baseline-handoff` Git 标签保留压缩包原始版本。原 Map 头文件另保存在 `provenance/cstl/`；benchmark 对照仅改变命名空间和 include 路径。
 
-Boost 1.87.0 官方归档及 commit、SHA-256 记录于 `vendor_manifest.json`。`include/boost/` 包含完整 Unordered 实现和递归依赖，算法、锁、探测、扩容及内存序均未改动。CSTL 只适配 mapped-value visitor、复制查找和快照接口；热点转发函数沿用 Boost 的强制内联方式。没有重新实现 Boost 算法。
+Boost 1.87.0 官方归档及 commit、SHA-256 记录于 `vendor_manifest.json`。`include/boost/` 包含完整 Unordered 实现和递归依赖。Map 改为完整 Boost flat map 加分片读写锁，以恢复原版的锁粒度和局部扩容。使用透明预哈希查询，未触发扩容的单键操作只调用一次用户 Hash（迁移旧键仍按表的需要重新哈希），不在每个元素中额外保存哈希。`detail/foa/core.hpp` 含少量可追溯定制：仅对本库内部 Hash 启用 14/15 的负载上限，并对平凡元素使用合法的平凡复制构造搬迁。未修改探测正确性、引用生命周期或内存序；未标记的普通 Boost Hash 保持官方负载上限和搬迁分派。原件、改动说明与 SHA 记录见 `provenance/boost/` 和 `vendor_manifest.json`。
 
 ```sh
 cmake -S . -B build-release -DCMAKE_BUILD_TYPE=Release -DCSTL_BUILD_TESTS=ON -DCSTL_BUILD_EXAMPLES=ON -DCSTL_BUILD_BENCHMARKS=ON
@@ -192,4 +192,4 @@ Windows 使用 `.exe`；多配置生成器使用 `build-release/Release/cstl_com
 
 `-DCSTL_BUILD_UPSTREAM_TESTS=ON` 额外构建官方并发容器核心测试。Serialization 和跨进程测试依赖额外编译型 Boost 库，不在本头文件库的核心测试范围；具体执行范围见 `VALIDATION.md`。
 
-性能矩阵同时比较压缩包的 parallel-hashmap 原版、直接 Boost 与 CSTL 封装；包括整数/字符串键、1/4/12 线程、65536 键及 64 热键、读取/未命中/更新/复合更新/混合/删除重插/预留插入/增长插入。每次检查正确性，随机交错运行，保留原始样本和置信区间。结果与限制见 `PERFORMANCE.md`，不能把有限硬件上的测量解释成所有负载性能完全相同。
+性能矩阵同时比较压缩包的 parallel-hashmap 原版、直接 Boost 与 CSTL 封装；包括整数/字符串键、1/4/12 线程、65536 键及 64 热键、读取/未命中/更新/复合更新/混合/删除重插/预留插入/增长插入。每次检查正确性，随机交错运行，保留原始样本和置信区间。0.2.0 旧结果保存在 `results/v0.2.0/`。结果与限制见 `PERFORMANCE.md`，不能把有限硬件上的测量解释成所有负载性能完全相同。

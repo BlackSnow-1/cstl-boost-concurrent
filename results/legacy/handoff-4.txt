@@ -1,4 +1,4 @@
 threads=4, ops/thread=200000, keys=65536, workload=prepopulated integer map updates
-cstl: 20.0795 Mops/s
-std::unordered_map + mutex: 12.9199 Mops/s
+cstl: 17.8228 Mops/s
+std::unordered_map + mutex: 14.0096 Mops/s
 Validation: both totals=800000. This workload is not a general performance ranking.

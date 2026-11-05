@@ -1256,6 +1256,13 @@ _STL_RESTORE_DEPRECATED_WARNING
  * class.
  */
 static constexpr float mlf=0.875f;
+// CSTL extension: opt-in load policy; untagged Boost containers retain 0.875.
+template<class...>using cstl_void_t=void;
+template<class H,class=void>struct cstl_load_factor_policy{static constexpr float value=0.875f;};
+template<class H>struct cstl_load_factor_policy<H,cstl_void_t<decltype(H::cstl_max_load_factor)>>{
+    static constexpr float value=H::cstl_max_load_factor;
+    static_assert(value>0.0f&&value<1.0f,"invalid table load limit");
+};
 
 template<typename Group,typename Element>
 struct table_locator
@@ -1433,6 +1440,7 @@ public:
   using alloc_traits=boost::allocator_traits<Allocator>;
   using element_type=typename type_policy::element_type;
   using arrays_type=Arrays<element_type,group_type,size_policy,Allocator>;
+  static constexpr float mlf=cstl_load_factor_policy<Hash>::value;
   using size_ctrl_type=SizeControl;
   static constexpr auto uses_fancy_pointers=!std::is_same<
     typename alloc_traits::pointer,
@@ -2326,7 +2334,7 @@ private:
     unchecked_emplace_at(position_for(hash),hash,std::forward<Value>(x));
   }
 
-  void nosize_transfer_element(
+  BOOST_FORCEINLINE void nosize_transfer_element(
     element_type* p,const arrays_type& arrays_,std::size_t& num_destroyed)
   {
     nosize_transfer_element(
@@ -2338,7 +2346,7 @@ private:
         !std::is_copy_constructible<element_type>::value>{});
   }
 
-  void nosize_transfer_element(
+  BOOST_FORCEINLINE void nosize_transfer_element(
     element_type* p,std::size_t hash,const arrays_type& arrays_,
     std::size_t& num_destroyed,std::true_type /* ->move */)
   {
@@ -2348,11 +2356,27 @@ private:
     ++num_destroyed;
     destroy_element_on_exit d{this,p};
     (void)d; /* unused var warning */
-    nosize_unchecked_emplace_at(
-      arrays_,position_for(hash,arrays_),hash,type_policy::move(*p));
+    nosize_transfer_construct(p,hash,arrays_,std::integral_constant<bool,
+      (cstl_load_factor_policy<Hash>::value>0.9f)&&
+      std::is_trivially_copy_constructible<element_type>::value&&
+      std::is_trivially_destructible<element_type>::value&&
+      std::is_same<Allocator,std::allocator<value_type>>::value>{});
   }
 
-  void nosize_transfer_element(
+  BOOST_FORCEINLINE void nosize_transfer_construct(element_type* p,std::size_t hash,
+    const arrays_type& arrays_,std::true_type)
+  {
+    nosize_unchecked_emplace_at(arrays_,position_for(hash,arrays_),hash,
+      static_cast<const element_type&>(*p));
+  }
+
+  BOOST_FORCEINLINE void nosize_transfer_construct(element_type* p,std::size_t hash,
+    const arrays_type& arrays_,std::false_type)
+  {
+    nosize_unchecked_emplace_at(arrays_,position_for(hash,arrays_),hash,type_policy::move(*p));
+  }
+
+  BOOST_FORCEINLINE void nosize_transfer_element(
     element_type* p,std::size_t hash,const arrays_type& arrays_,
     std::size_t& /*num_destroyed*/,std::false_type /* ->copy */)
   {
@@ -2362,7 +2386,7 @@ private:
   }
 
   template<typename... Args>
-  locator nosize_unchecked_emplace_at(
+  BOOST_FORCEINLINE locator nosize_unchecked_emplace_at(
     const arrays_type& arrays_,std::size_t pos0,std::size_t hash,
     Args&&... args)
   {

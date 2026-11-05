@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 #include <cstl/concurrent_unordered_map.hpp>
+#include <boost/unordered/concurrent_flat_map.hpp>
 #include "baseline_map.hpp"
 #include <algorithm>
 #include <atomic>
@@ -62,7 +63,7 @@ template<class Map,class Key,Work W> void run(int threads,int ops,int count) {
             else if constexpr(W==Work::upsert) { map.try_emplace_or_visit(key,[](auto& v){++v;},1); ++ok; }
             else if constexpr(W==Work::mixed) { if(i%10<8) {if(map.cvisit(key,[&](const auto& v){sum+=v;}))++ok;} else {if(map.visit(key,[](auto& v){++v;}))++ok;} }
             else if constexpr(W==Work::churn) { map.erase(key); map.try_emplace(key,1); ++ok; }
-            else if constexpr(insertion) { if(map.try_emplace(new_keys[std::size_t(t)*ops+i],1)) ++ok; }
+            else if constexpr(W==Work::insert || W==Work::growth) { if(map.try_emplace(new_keys[std::size_t(t)*ops+i],1)) ++ok; }
             else throw std::runtime_error("unknown workload");
         }
         sums[t]=sum; success[t]=ok;

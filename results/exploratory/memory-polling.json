@@ -1,0 +1,519 @@
+{
+  "method": "Whole-process peak RSS; includes generated input, allocator-retained memory and map. Fresh process per sample, 2 ms polling, 3 repetitions; memory timing is excluded from throughput results.",
+  "samples": [
+    {
+      "key_type": "integer",
+      "workload": "insert",
+      "elements": 200000,
+      "repeat": 0,
+      "backend": "cstl",
+      "peak_process_rss": 16904192,
+      "peak_observed_private": 14290944
+    },
+    {
+      "key_type": "integer",
+      "workload": "insert",
+      "elements": 200000,
+      "repeat": 0,
+      "backend": "baseline",
+      "peak_process_rss": 16228352,
+      "peak_observed_private": 11358208
+    },
+    {
+      "key_type": "integer",
+      "workload": "insert",
+      "elements": 200000,
+      "repeat": 1,
+      "backend": "cstl",
+      "peak_process_rss": 16912384,
+      "peak_observed_private": 14282752
+    },
+    {
+      "key_type": "integer",
+      "workload": "insert",
+      "elements": 200000,
+      "repeat": 1,
+      "backend": "baseline",
+      "peak_process_rss": 16211968,
+      "peak_observed_private": 13553664
+    },
+    {
+      "key_type": "integer",
+      "workload": "insert",
+      "elements": 200000,
+      "repeat": 2,
+      "backend": "cstl",
+      "peak_process_rss": 16920576,
+      "peak_observed_private": 12075008
+    },
+    {
+      "key_type": "integer",
+      "workload": "insert",
+      "elements": 200000,
+      "repeat": 2,
+      "backend": "baseline",
+      "peak_process_rss": 17186816,
+      "peak_observed_private": 11218944
+    },
+    {
+      "key_type": "integer",
+      "workload": "insert",
+      "elements": 1000000,
+      "repeat": 0,
+      "backend": "baseline",
+      "peak_process_rss": 72531968,
+      "peak_observed_private": 75247616
+    },
+    {
+      "key_type": "integer",
+      "workload": "insert",
+      "elements": 1000000,
+      "repeat": 0,
+      "backend": "cstl",
+      "peak_process_rss": 70770688,
+      "peak_observed_private": 73236480
+    },
+    {
+      "key_type": "integer",
+      "workload": "insert",
+      "elements": 1000000,
+      "repeat": 1,
+      "backend": "cstl",
+      "peak_process_rss": 71815168,
+      "peak_observed_private": 74334208
+    },
+    {
+      "key_type": "integer",
+      "workload": "insert",
+      "elements": 1000000,
+      "repeat": 1,
+      "backend": "baseline",
+      "peak_process_rss": 73904128,
+      "peak_observed_private": 76431360
+    },
+    {
+      "key_type": "integer",
+      "workload": "insert",
+      "elements": 1000000,
+      "repeat": 2,
+      "backend": "baseline",
+      "peak_process_rss": 73850880,
+      "peak_observed_private": 76427264
+    },
+    {
+      "key_type": "integer",
+      "workload": "insert",
+      "elements": 1000000,
+      "repeat": 2,
+      "backend": "cstl",
+      "peak_process_rss": 71835648,
+      "peak_observed_private": 74346496
+    },
+    {
+      "key_type": "integer",
+      "workload": "growth",
+      "elements": 200000,
+      "repeat": 0,
+      "backend": "baseline",
+      "peak_process_rss": 17207296,
+      "peak_observed_private": 12374016
+    },
+    {
+      "key_type": "integer",
+      "workload": "growth",
+      "elements": 200000,
+      "repeat": 0,
+      "backend": "cstl",
+      "peak_process_rss": 16957440,
+      "peak_observed_private": 12496896
+    },
+    {
+      "key_type": "integer",
+      "workload": "growth",
+      "elements": 200000,
+      "repeat": 1,
+      "backend": "cstl",
+      "peak_process_rss": 16957440,
+      "peak_observed_private": 12500992
+    },
+    {
+      "key_type": "integer",
+      "workload": "growth",
+      "elements": 200000,
+      "repeat": 1,
+      "backend": "baseline",
+      "peak_process_rss": 17166336,
+      "peak_observed_private": 14598144
+    },
+    {
+      "key_type": "integer",
+      "workload": "growth",
+      "elements": 200000,
+      "repeat": 2,
+      "backend": "baseline",
+      "peak_process_rss": 16216064,
+      "peak_observed_private": 11735040
+    },
+    {
+      "key_type": "integer",
+      "workload": "growth",
+      "elements": 200000,
+      "repeat": 2,
+      "backend": "cstl",
+      "peak_process_rss": 16932864,
+      "peak_observed_private": 12496896
+    },
+    {
+      "key_type": "integer",
+      "workload": "growth",
+      "elements": 1000000,
+      "repeat": 0,
+      "backend": "baseline",
+      "peak_process_rss": 74383360,
+      "peak_observed_private": 77471744
+    },
+    {
+      "key_type": "integer",
+      "workload": "growth",
+      "elements": 1000000,
+      "repeat": 0,
+      "backend": "cstl",
+      "peak_process_rss": 71831552,
+      "peak_observed_private": 74424320
+    },
+    {
+      "key_type": "integer",
+      "workload": "growth",
+      "elements": 1000000,
+      "repeat": 1,
+      "backend": "cstl",
+      "peak_process_rss": 71843840,
+      "peak_observed_private": 74424320
+    },
+    {
+      "key_type": "integer",
+      "workload": "growth",
+      "elements": 1000000,
+      "repeat": 1,
+      "backend": "baseline",
+      "peak_process_rss": 72904704,
+      "peak_observed_private": 75653120
+    },
+    {
+      "key_type": "integer",
+      "workload": "growth",
+      "elements": 1000000,
+      "repeat": 2,
+      "backend": "cstl",
+      "peak_process_rss": 72167424,
+      "peak_observed_private": 75059200
+    },
+    {
+      "key_type": "integer",
+      "workload": "growth",
+      "elements": 1000000,
+      "repeat": 2,
+      "backend": "baseline",
+      "peak_process_rss": 74387456,
+      "peak_observed_private": 77484032
+    },
+    {
+      "key_type": "string",
+      "workload": "insert",
+      "elements": 200000,
+      "repeat": 0,
+      "backend": "cstl",
+      "peak_process_rss": 68915200,
+      "peak_observed_private": 70184960
+    },
+    {
+      "key_type": "string",
+      "workload": "insert",
+      "elements": 200000,
+      "repeat": 0,
+      "backend": "baseline",
+      "peak_process_rss": 69541888,
+      "peak_observed_private": 70782976
+    },
+    {
+      "key_type": "string",
+      "workload": "insert",
+      "elements": 200000,
+      "repeat": 1,
+      "backend": "baseline",
+      "peak_process_rss": 69591040,
+      "peak_observed_private": 70791168
+    },
+    {
+      "key_type": "string",
+      "workload": "insert",
+      "elements": 200000,
+      "repeat": 1,
+      "backend": "cstl",
+      "peak_process_rss": 68894720,
+      "peak_observed_private": 70168576
+    },
+    {
+      "key_type": "string",
+      "workload": "insert",
+      "elements": 200000,
+      "repeat": 2,
+      "backend": "baseline",
+      "peak_process_rss": 69562368,
+      "peak_observed_private": 70782976
+    },
+    {
+      "key_type": "string",
+      "workload": "insert",
+      "elements": 200000,
+      "repeat": 2,
+      "backend": "cstl",
+      "peak_process_rss": 68866048,
+      "peak_observed_private": 70107136
+    },
+    {
+      "key_type": "string",
+      "workload": "insert",
+      "elements": 1000000,
+      "repeat": 0,
+      "backend": "baseline",
+      "peak_process_rss": 319705088,
+      "peak_observed_private": 340533248
+    },
+    {
+      "key_type": "string",
+      "workload": "insert",
+      "elements": 1000000,
+      "repeat": 0,
+      "backend": "cstl",
+      "peak_process_rss": 314454016,
+      "peak_observed_private": 335355904
+    },
+    {
+      "key_type": "string",
+      "workload": "insert",
+      "elements": 1000000,
+      "repeat": 1,
+      "backend": "cstl",
+      "peak_process_rss": 314425344,
+      "peak_observed_private": 335294464
+    },
+    {
+      "key_type": "string",
+      "workload": "insert",
+      "elements": 1000000,
+      "repeat": 1,
+      "backend": "baseline",
+      "peak_process_rss": 319664128,
+      "peak_observed_private": 340533248
+    },
+    {
+      "key_type": "string",
+      "workload": "insert",
+      "elements": 1000000,
+      "repeat": 2,
+      "backend": "baseline",
+      "peak_process_rss": 319631360,
+      "peak_observed_private": 340529152
+    },
+    {
+      "key_type": "string",
+      "workload": "insert",
+      "elements": 1000000,
+      "repeat": 2,
+      "backend": "cstl",
+      "peak_process_rss": 314363904,
+      "peak_observed_private": 335273984
+    },
+    {
+      "key_type": "string",
+      "workload": "growth",
+      "elements": 200000,
+      "repeat": 0,
+      "backend": "cstl",
+      "peak_process_rss": 69337088,
+      "peak_observed_private": 70615040
+    },
+    {
+      "key_type": "string",
+      "workload": "growth",
+      "elements": 200000,
+      "repeat": 0,
+      "backend": "baseline",
+      "peak_process_rss": 70082560,
+      "peak_observed_private": 71356416
+    },
+    {
+      "key_type": "string",
+      "workload": "growth",
+      "elements": 200000,
+      "repeat": 1,
+      "backend": "baseline",
+      "peak_process_rss": 70082560,
+      "peak_observed_private": 71266304
+    },
+    {
+      "key_type": "string",
+      "workload": "growth",
+      "elements": 200000,
+      "repeat": 1,
+      "backend": "cstl",
+      "peak_process_rss": 69230592,
+      "peak_observed_private": 70483968
+    },
+    {
+      "key_type": "string",
+      "workload": "growth",
+      "elements": 200000,
+      "repeat": 2,
+      "backend": "cstl",
+      "peak_process_rss": 69263360,
+      "peak_observed_private": 70479872
+    },
+    {
+      "key_type": "string",
+      "workload": "growth",
+      "elements": 200000,
+      "repeat": 2,
+      "backend": "baseline",
+      "peak_process_rss": 69947392,
+      "peak_observed_private": 71254016
+    },
+    {
+      "key_type": "string",
+      "workload": "growth",
+      "elements": 1000000,
+      "repeat": 0,
+      "backend": "baseline",
+      "peak_process_rss": 319774720,
+      "peak_observed_private": 340537344
+    },
+    {
+      "key_type": "string",
+      "workload": "growth",
+      "elements": 1000000,
+      "repeat": 0,
+      "backend": "cstl",
+      "peak_process_rss": 314572800,
+      "peak_observed_private": 335380480
+    },
+    {
+      "key_type": "string",
+      "workload": "growth",
+      "elements": 1000000,
+      "repeat": 1,
+      "backend": "cstl",
+      "peak_process_rss": 314560512,
+      "peak_observed_private": 335347712
+    },
+    {
+      "key_type": "string",
+      "workload": "growth",
+      "elements": 1000000,
+      "repeat": 1,
+      "backend": "baseline",
+      "peak_process_rss": 319848448,
+      "peak_observed_private": 340647936
+    },
+    {
+      "key_type": "string",
+      "workload": "growth",
+      "elements": 1000000,
+      "repeat": 2,
+      "backend": "baseline",
+      "peak_process_rss": 319799296,
+      "peak_observed_private": 340471808
+    },
+    {
+      "key_type": "string",
+      "workload": "growth",
+      "elements": 1000000,
+      "repeat": 2,
+      "backend": "cstl",
+      "peak_process_rss": 314576896,
+      "peak_observed_private": 335331328
+    }
+  ],
+  "summary": [
+    {
+      "key_type": "integer",
+      "workload": "insert",
+      "elements": 200000,
+      "median_peak_rss": {
+        "baseline": 16228352,
+        "cstl": 16912384
+      },
+      "cstl_vs_baseline": 1.0421504290762242
+    },
+    {
+      "key_type": "integer",
+      "workload": "insert",
+      "elements": 1000000,
+      "median_peak_rss": {
+        "baseline": 73850880,
+        "cstl": 71815168
+      },
+      "cstl_vs_baseline": 0.972434830837493
+    },
+    {
+      "key_type": "integer",
+      "workload": "growth",
+      "elements": 200000,
+      "median_peak_rss": {
+        "baseline": 17166336,
+        "cstl": 16957440
+      },
+      "cstl_vs_baseline": 0.9878310665712241
+    },
+    {
+      "key_type": "integer",
+      "workload": "growth",
+      "elements": 1000000,
+      "median_peak_rss": {
+        "baseline": 74383360,
+        "cstl": 71843840
+      },
+      "cstl_vs_baseline": 0.9658590308370044
+    },
+    {
+      "key_type": "string",
+      "workload": "insert",
+      "elements": 200000,
+      "median_peak_rss": {
+        "baseline": 69562368,
+        "cstl": 68894720
+      },
+      "cstl_vs_baseline": 0.9904021668727551
+    },
+    {
+      "key_type": "string",
+      "workload": "insert",
+      "elements": 1000000,
+      "median_peak_rss": {
+        "baseline": 319664128,
+        "cstl": 314425344
+      },
+      "cstl_vs_baseline": 0.9836115987340313
+    },
+    {
+      "key_type": "string",
+      "workload": "growth",
+      "elements": 200000,
+      "median_peak_rss": {
+        "baseline": 70082560,
+        "cstl": 69263360
+      },
+      "cstl_vs_baseline": 0.9883109292811222
+    },
+    {
+      "key_type": "string",
+      "workload": "growth",
+      "elements": 1000000,
+      "median_peak_rss": {
+        "baseline": 319799296,
+        "cstl": 314572800
+      },
+      "cstl_vs_baseline": 0.9836569496388134
+    }
+  ]
+}

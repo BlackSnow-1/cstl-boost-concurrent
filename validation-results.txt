@@ -1,11 +1,11 @@
-2026-11-04 Windows x64 MSVC 19.44.35213 C++17
-Original handoff Release: 11 suites PASS
-Final project Release and Debug: 16 suites PASS each
-Final Release CTest including Boost core: 34/34 PASS (41.88 seconds)
+2026-11-05 CSTL 0.3.0 Windows x64 MSVC 19.44.35213 C++17
+Project Release/Debug: 17 suites PASS each
+Release + official Boost core: 34/34 CTest programs PASS (40.17 seconds)
 Installed consumer + 8 standalone public headers /W4 /WX: PASS
-Vendor integrity: 2082 recorded upstream files PASS
-MSVC ICF: read/update/insert facade-native pairs all folded
-Performance: see PERFORMANCE.md and results/raw.csv
-Scope and unexecuted checks: see VALIDATION.md
-2026-11-05 GitHub Actions: 7/7 jobs PASS; Windows/Linux/macOS Debug/Release + Linux Boost core.
-Verified code SHA: efa0261e0bf0b5571f44b4f0224ca11cd5c8722b
+Source integrity: 2082 upstream records plus preserved originals PASS
+Main throughput matrix: 48 cases / 1584 samples
+Frozen original regressions: 14 cases / 882 samples
+Growth-boundary matrix: 12 cases / 324 samples
+All 74 pointwise 95% ratio lower bounds exceed 0.95
+Memory: 8 cases, 48 processes; peak RSS lower than baseline in all 8
+Detailed scope and results: VALIDATION.md, PERFORMANCE.md, results/

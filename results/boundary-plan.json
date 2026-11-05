@@ -1,0 +1,86 @@
+[
+  {
+    "key_type": "integer",
+    "workload": "read",
+    "threads": 1,
+    "keys": 114672,
+    "ops_per_thread": 500000
+  },
+  {
+    "key_type": "integer",
+    "workload": "miss",
+    "threads": 1,
+    "keys": 114672,
+    "ops_per_thread": 500000
+  },
+  {
+    "key_type": "integer",
+    "workload": "mixed",
+    "threads": 1,
+    "keys": 114672,
+    "ops_per_thread": 500000
+  },
+  {
+    "key_type": "string",
+    "workload": "read",
+    "threads": 1,
+    "keys": 114672,
+    "ops_per_thread": 500000
+  },
+  {
+    "key_type": "integer",
+    "workload": "read",
+    "threads": 4,
+    "keys": 114672,
+    "ops_per_thread": 500000
+  },
+  {
+    "key_type": "integer",
+    "workload": "miss",
+    "threads": 4,
+    "keys": 114672,
+    "ops_per_thread": 500000
+  },
+  {
+    "key_type": "integer",
+    "workload": "mixed",
+    "threads": 4,
+    "keys": 114672,
+    "ops_per_thread": 500000
+  },
+  {
+    "key_type": "string",
+    "workload": "read",
+    "threads": 4,
+    "keys": 114672,
+    "ops_per_thread": 500000
+  },
+  {
+    "key_type": "integer",
+    "workload": "read",
+    "threads": 12,
+    "keys": 114672,
+    "ops_per_thread": 500000
+  },
+  {
+    "key_type": "integer",
+    "workload": "miss",
+    "threads": 12,
+    "keys": 114672,
+    "ops_per_thread": 500000
+  },
+  {
+    "key_type": "integer",
+    "workload": "mixed",
+    "threads": 12,
+    "keys": 114672,
+    "ops_per_thread": 500000
+  },
+  {
+    "key_type": "string",
+    "workload": "read",
+    "threads": 12,
+    "keys": 114672,
+    "ops_per_thread": 500000
+  }
+]
