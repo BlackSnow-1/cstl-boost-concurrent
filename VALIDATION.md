@@ -33,4 +33,4 @@ Debug 单独使用 `-DCMAKE_BUILD_TYPE=Debug`。MSVC 可加 `-DCMAKE_POLICY_DEFA
 
 0.2.0 的 MSVC ICF 证明只针对旧的单个 Boost concurrent_flat_map 适配层，不作为 0.3.0 证据；探针源码归档在 `provenance/experiments/0.2/`。
 
-GitHub Actions 当前版本结果记录于 `results/validation/ci.json`，包括 Windows/Linux/macOS Debug/Release 和 Linux 官方核心测试。
+GitHub Actions 当前版本已通过全部 7/7 jobs：Windows/Linux/macOS 的 Debug/Release 六组，以及 Linux 的 32 个官方核心测试。代码提交 `6ce94afcf262d471a47368aeff32189982e23565` 已验证；后续提交仅补充文档和 CI 记录，不修改 C++ 源码。工作流： https://github.com/BlackSnow-1/cstl-boost-concurrent/actions/runs/41941465440 。结果记录于 `results/validation/ci.json`，包括 Windows/Linux/macOS Debug/Release 和 Linux 官方核心测试。

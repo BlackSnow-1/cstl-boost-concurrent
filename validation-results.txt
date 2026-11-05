@@ -9,3 +9,5 @@ Growth-boundary matrix: 12 cases / 324 samples
 All 74 pointwise 95% ratio lower bounds exceed 0.95
 Memory: 8 cases, 48 processes; peak RSS lower than baseline in all 8
 Detailed scope and results: VALIDATION.md, PERFORMANCE.md, results/
+GitHub Actions 7/7 jobs PASS; tested code SHA 6ce94afcf262d471a47368aeff32189982e23565
+Workflow: https://github.com/BlackSnow-1/cstl-boost-concurrent/actions/runs/41941465440
