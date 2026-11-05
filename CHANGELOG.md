@@ -1,5 +1,13 @@
 # Changes
 
+## 1.0.0.0 (2026-11-05)
+
+- First formal GitHub Release.
+- Use the exact four-component version in CMake and release packaging.
+- Mark header-only CMake package version metadata architecture independent.
+- Preserve the verified 0.3.0 C++ container implementation without source changes.
+- Ship full source, a relocatable CMake/header SDK and SHA-256 checksums.
+
 ## 0.3.0 (2026-11-05)
 
 - Restore original shard-level shared/exclusive locking and local growth using complete Boost flat maps.

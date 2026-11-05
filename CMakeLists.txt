@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(cstl VERSION 0.3.0 LANGUAGES CXX)
+project(cstl VERSION 1.0.0.0 LANGUAGES CXX)
 
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
@@ -58,11 +58,11 @@ configure_package_config_file(cmake/cstlConfig.cmake.in
     ${CMAKE_CURRENT_BINARY_DIR}/cstlConfig.cmake
     INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cstl)
 write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/cstlConfigVersion.cmake
-    VERSION ${PROJECT_VERSION} COMPATIBILITY SameMajorVersion)
+    VERSION ${PROJECT_VERSION} COMPATIBILITY SameMajorVersion ARCH_INDEPENDENT)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/cstlConfig.cmake
     ${CMAKE_CURRENT_BINARY_DIR}/cstlConfigVersion.cmake
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cstl)
-install(FILES LICENSE NOTICE.md THIRD_PARTY.md README.md SELECTION.md VALIDATION.md PERFORMANCE.md CHANGELOG.md vendor_manifest.json
+install(FILES LICENSE NOTICE.md THIRD_PARTY.md README.md SELECTION.md VALIDATION.md PERFORMANCE.md CHANGELOG.md RELEASE_NOTES.md vendor_manifest.json
     DESTINATION ${CMAKE_INSTALL_DATADIR}/cstl)
 install(DIRECTORY licenses/ DESTINATION ${CMAKE_INSTALL_DATADIR}/cstl/licenses)
 install(DIRECTORY provenance/ DESTINATION ${CMAKE_INSTALL_DATADIR}/cstl/provenance)

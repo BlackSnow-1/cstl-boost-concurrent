@@ -1,0 +1,16 @@
+{
+  "version": "1.0.0.0",
+  "cpp_identical_to_tag": "v0.3.0",
+  "ctest_programs_passed": 34,
+  "ctest_programs_failed": 0,
+  "project_suites": 17,
+  "boost_core_programs": 32,
+  "ctest_seconds": 45.09,
+  "cmake_find_package": "cstl 1.0.0.0 EXACT CONFIG REQUIRED",
+  "relocated_sdk_consumer_exit": 0,
+  "standalone_public_headers_w4_wx": 8,
+  "sdk_upstream_include_records_verified": 1912,
+  "sdk_include_and_cmake_fingerprint": "c07c26fb393afeca087835e599b3f205a6dd13b534bb846668f9dd258c0ec548",
+  "header_only_package_architecture_independent": true,
+  "performance_evidence": "Unchanged C++ implementation; existing 74 comparisons / 2790 samples retained."
+}

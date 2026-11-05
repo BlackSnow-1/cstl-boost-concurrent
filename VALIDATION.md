@@ -33,4 +33,9 @@ Debug 单独使用 `-DCMAKE_BUILD_TYPE=Debug`。MSVC 可加 `-DCMAKE_POLICY_DEFA
 
 0.2.0 的 MSVC ICF 证明只针对旧的单个 Boost concurrent_flat_map 适配层，不作为 0.3.0 证据；探针源码归档在 `provenance/experiments/0.2/`。
 
-GitHub Actions 当前版本已通过全部 7/7 jobs：Windows/Linux/macOS 的 Debug/Release 六组，以及 Linux 的 32 个官方核心测试。代码提交 `6ce94afcf262d471a47368aeff32189982e23565` 已验证；后续提交仅补充文档和 CI 记录，不修改 C++ 源码。工作流： https://github.com/BlackSnow-1/cstl-boost-concurrent/actions/runs/41941465440 。结果记录于 `results/validation/ci.json`，包括 Windows/Linux/macOS Debug/Release 和 Linux 官方核心测试。
+0.3.0 实现基线的 GitHub Actions 已通过全部 7/7 jobs：Windows/Linux/macOS 的 Debug/Release 六组，以及 Linux 的 32 个官方核心测试。代码提交 `6ce94afcf262d471a47368aeff32189982e23565` 已验证；后续提交仅补充文档和 CI 记录，不修改 C++ 源码。工作流： https://github.com/BlackSnow-1/cstl-boost-concurrent/actions/runs/41941465440 。结果记录于 `results/validation/ci.json`，包括 Windows/Linux/macOS Debug/Release 和 Linux 官方核心测试。
+
+
+## 1.0.0.0 正式发布
+
+正式发布的 C++ 容器源码与 0.3.0 逐字节一致，以上功能和性能证据对应同一实现。发布准备已验证四段版本 `find_package(cstl 1.0.0.0 EXACT CONFIG REQUIRED)`、SDK 解压后的独立编译及使用。本机按 1.0.0.0 元数据重新配置后，Release 34/34 CTest 程序通过（45.09 秒），8 个公开头文件 `/W4 /WX` 单独编译及重定位 SDK 示例运行通过，详见 `results/releases/1.0.0.0/`。正式发布仅在该提交的跨平台 CI 全部通过后执行；对应提交及工作流记录随 Release 的 `validation-1.0.0.0.json` 提供。

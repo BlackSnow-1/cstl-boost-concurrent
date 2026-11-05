@@ -2,9 +2,11 @@
 
 源码自包含的 C++17 并发容器库。
 
-CSTL 0.3.0 面向**通用并发读写，兼顾吞吐和易用性**。它从成熟项目中选取适合的数据结构，把必要源码和许可证一起带入，提供统一的 `cstl::` 接口。
+CSTL 1.0.0.0 面向**通用并发读写，兼顾吞吐和易用性**。它从成熟项目中选取适合的数据结构，把必要源码和许可证一起带入，提供统一的 `cstl::` 接口。
 
-**使用时无需安装、链接或下载 Boost、oneTBB、Folly、libcds、parallel-hashmap 或 ConcurrentQueue。** 需要 C++17 标准库和系统线程支持；阻塞队列还使用系统信号量。构建过程没有联网步骤。它是可测试的初版，尚不应视为已通过生产环境长期验证的 STL 替代品。
+**使用时无需安装、链接或下载 Boost、oneTBB、Folly、libcds、parallel-hashmap 或 ConcurrentQueue。** 需要 C++17 标准库和系统线程支持；阻塞队列还使用系统信号量。构建过程没有联网步骤。本正式版的功能和性能验证范围见 [验证记录](VALIDATION.md)。
+
+首个正式发布为 **1.0.0.0**，CMake 包版本与 GitHub Release 版本一致。C++ 容器实现与已验证的 0.3.0 保持逐字节一致，原有性能记录继续适用。发布内容见 [发布说明](RELEASE_NOTES.md)。
 
 “STL 风格”指命名、模板和使用习惯。并发访问采用 `visit`、值副本和 `try_pop`，没有把容易产生悬空引用的 `operator[]`、`front()`、`top()` 或普通迭代器暴露出来。
 
@@ -158,7 +160,7 @@ cmake --install build --config Release --prefix /your/install/prefix
 
 安装后可通过 `find_package(cstl CONFIG REQUIRED)` 和 `cstl::cstl` 使用。头文件库本身没有待编译的第三方二进制。
 
-MSVC 建议使用 x64 Native Tools 终端或 Visual Studio CMake；GCC/Clang 直接编译示例可使用 `c++ -std=c++17 -O2 -pthread -Iinclude examples/basic.cpp`。本机实际验证平台为 Windows x64 / MSVC 19.44；当前版本已通过 Windows/Linux/macOS Debug/Release 和 Linux 官方核心测试，GitHub Actions 结果见 `results/validation/ci.json`；0.2.0 历史 CI 已归档到 `results/v0.2.0/validation/`。没有单独安排 ARM 专项验证。预留的 `CSTL_ENABLE_TSAN=ON` 可用于支持 ThreadSanitizer 的 GCC/Clang 环境，**本次未运行 TSan**。
+MSVC 建议使用 x64 Native Tools 终端或 Visual Studio CMake；GCC/Clang 直接编译示例可使用 `c++ -std=c++17 -O2 -pthread -Iinclude examples/basic.cpp`。本机实际验证平台为 Windows x64 / MSVC 19.44；0.3.0 同代码实现基线的跨平台 CI 记录见 `results/validation/ci.json`；1.0.0.0 发布提交的 CI 记录见 Release 附件 `validation-1.0.0.0.json`；0.2.0 历史 CI 已归档到 `results/v0.2.0/validation/`。没有单独安排 ARM 专项验证。预留的 `CSTL_ENABLE_TSAN=ON` 可用于支持 ThreadSanitizer 的 GCC/Clang 环境，**本次未运行 TSan**。
 
 `cstl_benchmark [threads] [operations_per_thread]` 仅测预填充整数哈希表的更新，对照 `std::unordered_map + mutex`，并校验最终总数。它不比较全部候选库，也不覆盖队列、读多写少、热点 key 或尾延迟，不能用于证明全场景最快。
 

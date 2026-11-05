@@ -1,4 +1,6 @@
-# CSTL Boost 0.3.0 交接（2026-11-05）
+# CSTL Boost 1.0.0.0 发布交接（2026-11-05）
+
+首个正式发布为 1.0.0.0；C++ 实现与 0.3.0 字节一致，性能和功能证据沿用同一实现，新增四段版本安装与发布验证。发布提交的 CI 结果见 GitHub Release 和 validation-1.0.0.0.json。
 
 项目为 D:/GitHubProjects/cstl-boost-concurrent，私有 GitHub 仓库 BlackSnow-1/cstl-boost-concurrent。C++17，namespace/target 仍为 cstl/cstl::cstl。
 
@@ -12,4 +14,4 @@ Boost detail/foa/core.hpp 有经过记录的少量定制：内部 Hash 的 14/15
 
 其他六个容器不变。构建无需网络、外部 Boost 或编译型 Boost 库；许可证和原始版权均保留。
 
-本轮 CI 全部 7/7 jobs 通过，验证代码 6ce94afcf262d471a47368aeff32189982e23565。结果保存在 results/validation/ci.json。0.3.0 主矩阵、旧参数重放、增长边界的全部 74 组逐场景验收通过。
+0.3.0 实现基线 CI 全部 7/7 jobs 通过，验证代码 6ce94afcf262d471a47368aeff32189982e23565。结果保存在 results/validation/ci.json。0.3.0 主矩阵、旧参数重放、增长边界的全部 74 组逐场景验收通过。
