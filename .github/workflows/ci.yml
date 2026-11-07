@@ -37,7 +37,7 @@ jobs:
         sanitizer: [ASAN, TSAN]
     env:
       ASAN_OPTIONS: halt_on_error=1
-      TSAN_OPTIONS: halt_on_error=1
+      TSAN_OPTIONS: halt_on_error=1:suppressions=${{ github.workspace }}/.github/tsan.supp
     steps:
       - uses: actions/checkout@v4
       # Keep the hosted runner's ASLR layout compatible with TSan's shadow memory.

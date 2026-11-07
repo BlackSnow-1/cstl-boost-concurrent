@@ -1,0 +1,3 @@
+# GCC TSan does not model the acquire fence in Block::is_empty().
+# It reports slot reuse by the explicit producer as a race with dequeue.
+race:moodycamel::*ExplicitProducer::enqueue<
