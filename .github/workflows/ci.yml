@@ -92,7 +92,7 @@ jobs:
         id: libcxx-msan
         with:
           path: libcxx-msan
-          key: ubuntu-24.04-x64-libcxx-18.1.8-msan-origins-v1
+          key: ubuntu-24.04-x64-libcxx-18.1.8-msan-origins-v2
       - name: Build an instrumented C++ standard library
         if: steps.libcxx-msan.outputs.cache-hit != 'true'
         run: |
@@ -100,7 +100,8 @@ jobs:
           cmake -S llvm-project-18.1.8.src/runtimes -B llvm-build -G Ninja \
             -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang-18 -DCMAKE_CXX_COMPILER=clang++-18 \
             -DCMAKE_INSTALL_PREFIX="$PWD/libcxx-msan" -DCMAKE_INSTALL_LIBDIR=lib \
-            '-DLLVM_ENABLE_RUNTIMES=libcxx;libcxxabi;libunwind' -DLLVM_ENABLE_PER_TARGET_RUNTIME_DIR=OFF \
+            '-DLLVM_ENABLE_RUNTIMES=libcxx;libcxxabi' -DLLVM_ENABLE_PER_TARGET_RUNTIME_DIR=OFF \
+            -DLIBCXXABI_USE_LLVM_UNWINDER=OFF \
             -DLLVM_USE_SANITIZER=MemoryWithOrigins
           cmake --build llvm-build --parallel 2
           cmake --install llvm-build
@@ -115,3 +116,4 @@ jobs:
       - run: ctest --test-dir build --output-on-failure
         env:
           MSAN_SYMBOLIZER_PATH: /usr/bin/llvm-symbolizer-18
+          LD_LIBRARY_PATH: ${{ github.workspace }}/libcxx-msan/lib
