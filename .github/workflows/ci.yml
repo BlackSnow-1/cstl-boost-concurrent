@@ -28,3 +28,21 @@ jobs:
       - run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCSTL_BUILD_UPSTREAM_TESTS=ON
       - run: cmake --build build --parallel 2
       - run: ctest --test-dir build --output-on-failure --parallel 2
+  sanitizers:
+    name: ${{ matrix.sanitizer }} (Linux)
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        sanitizer: [ASAN, TSAN]
+    env:
+      ASAN_OPTIONS: halt_on_error=1
+      TSAN_OPTIONS: halt_on_error=1
+    steps:
+      - uses: actions/checkout@v4
+      # Keep the hosted runner's ASLR layout compatible with TSan's shadow memory.
+      - if: matrix.sanitizer == 'TSAN'
+        run: sudo sysctl -w vm.mmap_rnd_bits=28
+      - run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DCSTL_BUILD_TESTS=ON -DCSTL_ENABLE_${{ matrix.sanitizer }}=ON
+      - run: cmake --build build --parallel 2
+      - run: ctest --test-dir build --output-on-failure
