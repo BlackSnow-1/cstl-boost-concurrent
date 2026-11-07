@@ -164,7 +164,7 @@ MSVC 建议使用 x64 Native Tools 终端或 Visual Studio CMake；GCC/Clang 直
 
 GitHub Actions 在 Windows x64、Linux x64、Linux ARM64 和 macOS 上分别以 Debug 和 Release 运行项目测试及 32 个 Boost 官方并发核心测试程序。
 
-Linux CI 分别在 AddressSanitizer（ASan，含泄漏检查）、ThreadSanitizer（TSan）和 UndefinedBehaviorSanitizer（UBSan）下运行项目测试。支持相应 sanitizer 的 GCC/Clang 环境可通过 `-DCSTL_BUILD_TESTS=ON` 与 `-DCSTL_ENABLE_ASAN=ON`、`-DCSTL_ENABLE_TSAN=ON` 或 `-DCSTL_ENABLE_UBSAN=ON` 复现，每项使用独立的构建目录。TSan CI 加载 `.github/tsan.supp`，过滤 moodycamel 显式生产者入队路径上因 GCC TSan 无法识别原子栅栏而产生的报告。
+Linux CI 分别在 AddressSanitizer（ASan，含泄漏检查）、ThreadSanitizer（TSan）和 UndefinedBehaviorSanitizer（UBSan）下运行项目测试。支持相应 sanitizer 的 GCC/Clang 环境可通过 `-DCSTL_BUILD_TESTS=ON` 与 `-DCSTL_ENABLE_ASAN=ON`、`-DCSTL_ENABLE_TSAN=ON` 或 `-DCSTL_ENABLE_UBSAN=ON` 复现，每项使用独立的构建目录。TSan CI 加载 `.github/tsan.supp`，过滤 moodycamel 显式生产者入队路径上因 GCC TSan 无法识别原子栅栏而产生的报告。Linux CI 另用 Valgrind Memcheck 运行两个项目测试程序，并用 clang-tidy 启用 Clang Static Analyzer 的核心及 C++ 检查。
 
 `cstl_benchmark [threads] [operations_per_thread]` 仅测预填充整数哈希表的更新，对照 `std::unordered_map + mutex`，并校验最终总数。它不比较全部候选库，也不覆盖队列、读多写少、热点 key 或尾延迟，不能用于证明全场景最快。
 

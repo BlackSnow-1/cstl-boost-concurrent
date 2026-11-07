@@ -41,3 +41,28 @@ jobs:
       - run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DCSTL_BUILD_TESTS=ON -DCSTL_ENABLE_${{ matrix.sanitizer }}=ON
       - run: cmake --build build --parallel 2
       - run: ctest --test-dir build --output-on-failure
+  memcheck:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y valgrind
+      - run: cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCSTL_BUILD_TESTS=ON
+      - run: cmake --build build --parallel 2
+      - name: Check project tests for memory errors
+        run: |
+          for test in cstl_tests cstl_boost_map_tests; do
+            valgrind --tool=memcheck --track-origins=yes --leak-check=full \
+              --errors-for-leak-kinds=definite,possible --error-exitcode=1 "build/$test"
+          done
+  static-analysis:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y clang-tidy-18
+      - name: Configure Clang Static Analyzer checks
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DCSTL_BUILD_TESTS=ON \
+            '-DCMAKE_CXX_CLANG_TIDY=clang-tidy-18;--checks=-*,clang-analyzer-core.*,clang-analyzer-cplusplus.*;--warnings-as-errors=clang-analyzer-*;--header-filter=/include/cstl/[^/]+[.]hpp$'
+      - run: cmake --build build --parallel 2
