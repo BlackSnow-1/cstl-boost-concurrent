@@ -28,10 +28,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        sanitizer: [ASAN, TSAN]
+        sanitizer: [ASAN, TSAN, UBSAN]
     env:
-      ASAN_OPTIONS: halt_on_error=1
+      ASAN_OPTIONS: halt_on_error=1:detect_leaks=1
       TSAN_OPTIONS: halt_on_error=1:suppressions=${{ github.workspace }}/.github/tsan.supp
+      UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
     steps:
       - uses: actions/checkout@v4
       # Keep the hosted runner's ASLR layout compatible with TSan's shadow memory.
