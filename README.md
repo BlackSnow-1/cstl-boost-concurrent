@@ -160,7 +160,9 @@ cmake --install build --config Release --prefix /your/install/prefix
 
 安装后可通过 `find_package(cstl CONFIG REQUIRED)` 和 `cstl::cstl` 使用。头文件库本身没有待编译的第三方二进制。
 
-MSVC 建议使用 x64 Native Tools 终端或 Visual Studio CMake；GCC/Clang 直接编译示例可使用 `c++ -std=c++17 -O2 -pthread -Iinclude examples/basic.cpp`。本机实际验证平台为 Windows x64 / MSVC 19.44；0.3.0 同代码实现基线的跨平台 CI 记录见 `results/validation/ci.json`；1.0.0.0 发布提交的 CI 记录见 Release 附件 `validation-1.0.0.0.json`；0.2.0 历史 CI 已归档到 `results/v0.2.0/validation/`。没有单独安排 ARM 专项验证。
+MSVC 建议使用 x64 Native Tools 终端或 Visual Studio CMake；GCC/Clang 直接编译示例可使用 `c++ -std=c++17 -O2 -pthread -Iinclude examples/basic.cpp`。本机实际验证平台为 Windows x64 / MSVC 19.44；0.3.0 同代码实现基线的跨平台 CI 记录见 `results/validation/ci.json`；1.0.0.0 发布提交的 CI 记录见 Release 附件 `validation-1.0.0.0.json`；0.2.0 历史 CI 已归档到 `results/v0.2.0/validation/`。
+
+GitHub Actions 在 Windows x64、Linux x64、Linux ARM64 和 macOS 上分别以 Debug 和 Release 运行项目测试及 32 个 Boost 官方并发核心测试程序。
 
 Linux CI 分别在 AddressSanitizer（ASan）和 ThreadSanitizer（TSan）下运行项目测试。支持相应 sanitizer 的 GCC/Clang 环境可通过 `-DCSTL_BUILD_TESTS=ON` 与 `-DCSTL_ENABLE_ASAN=ON` 或 `-DCSTL_ENABLE_TSAN=ON` 复现，两项使用独立的构建目录。TSan CI 加载 `.github/tsan.supp`，过滤 moodycamel 显式生产者入队路径上因 GCC TSan 无法识别原子栅栏而产生的报告。
 
