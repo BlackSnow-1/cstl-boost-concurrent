@@ -60,9 +60,58 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - run: sudo apt-get update && sudo apt-get install -y clang-tidy-18
+      - run: sudo apt-get update && sudo apt-get install -y clang-18 clang-tidy-18
       - name: Configure Clang Static Analyzer checks
         run: |
           cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DCSTL_BUILD_TESTS=ON \
+            -DCMAKE_CXX_COMPILER=clang++-18 -DCMAKE_CXX_FLAGS=-Werror=thread-safety \
             '-DCMAKE_CXX_CLANG_TIDY=clang-tidy-18;--checks=-*,clang-analyzer-core.*,clang-analyzer-cplusplus.*;--warnings-as-errors=clang-analyzer-*;--header-filter=/include/cstl/[^/]+[.]hpp$'
       - run: cmake --build build --parallel 2
+  relacy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: dvyukov/relacy
+          ref: 2c87447b56b90cbccb5129c93a4e82eda5e7868e
+          path: relacy
+          persist-credentials: false
+      - run: c++ -std=c++20 -O2 -pthread -Irelacy tests/relacy_slot_reuse.cpp -o slot_reuse
+      - run: ./slot_reuse
+  msan:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      MSAN_OPTIONS: halt_on_error=1:exit_code=86
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y clang-18 llvm-18 ninja-build
+      - uses: actions/cache@v4
+        id: libcxx-msan
+        with:
+          path: libcxx-msan
+          key: ubuntu-24.04-x64-libcxx-18.1.8-msan-origins-v1
+      - name: Build an instrumented C++ standard library
+        if: steps.libcxx-msan.outputs.cache-hit != 'true'
+        run: |
+          curl -fLSs --retry 3 https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/llvm-project-18.1.8.src.tar.xz | tar -xJ
+          cmake -S llvm-project-18.1.8.src/runtimes -B llvm-build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang-18 -DCMAKE_CXX_COMPILER=clang++-18 \
+            -DCMAKE_INSTALL_PREFIX="$PWD/libcxx-msan" -DCMAKE_INSTALL_LIBDIR=lib \
+            '-DLLVM_ENABLE_RUNTIMES=libcxx;libcxxabi' -DLLVM_ENABLE_PER_TARGET_RUNTIME_DIR=OFF \
+            -DLLVM_USE_SANITIZER=MemoryWithOrigins
+          cmake --build llvm-build --parallel 2
+          cmake --install llvm-build
+      - run: sudo sysctl -w vm.mmap_rnd_bits=28
+      - name: Build project tests with MemorySanitizer
+        run: |
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCSTL_BUILD_TESTS=ON \
+            -DCMAKE_CXX_COMPILER=clang++-18 \
+            "-DCMAKE_CXX_FLAGS=-stdlib=libc++ -nostdinc++ -isystem $PWD/libcxx-msan/include/c++/v1 -fsanitize=memory -fsanitize-memory-track-origins=2 -O1 -g -fno-omit-frame-pointer -fPIE" \
+            "-DCMAKE_EXE_LINKER_FLAGS=-L$PWD/libcxx-msan/lib -Wl,-rpath,$PWD/libcxx-msan/lib -pie"
+          cmake --build build --parallel 2
+      - run: ctest --test-dir build --output-on-failure
+        env:
+          MSAN_SYMBOLIZER_PATH: /usr/bin/llvm-symbolizer-18

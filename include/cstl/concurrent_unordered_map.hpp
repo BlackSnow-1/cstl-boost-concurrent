@@ -13,6 +13,11 @@
 #include <shared_mutex>
 #include <utility>
 #include <vector>
+#if defined(__clang__)
+#define CSTL_MAP_LOCK_ATTRIBUTE(...) __attribute__((__VA_ARGS__))
+#else
+#define CSTL_MAP_LOCK_ATTRIBUTE(...)
+#endif
 #ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable : 4324) // Intentional cache-line alignment of shard locks.
@@ -74,10 +79,35 @@ class concurrent_unordered_map
         }
     };
     using table = boost::unordered_flat_map<Key, T, prepared_hash, prepared_equal>;
+    struct CSTL_MAP_LOCK_ATTRIBUTE(capability("mutex")) shard_mutex : std::shared_mutex
+    {
+    };
+    struct CSTL_MAP_LOCK_ATTRIBUTE(scoped_lockable) write_lock
+    {
+        explicit write_lock(shard_mutex &mutex) CSTL_MAP_LOCK_ATTRIBUTE(acquire_capability(mutex))
+            : lock(mutex)
+        {
+        }
+        ~write_lock() CSTL_MAP_LOCK_ATTRIBUTE(release_capability()) = default;
+
+      private:
+        std::unique_lock<shard_mutex> lock;
+    };
+    struct CSTL_MAP_LOCK_ATTRIBUTE(scoped_lockable) read_lock
+    {
+        explicit read_lock(shard_mutex &mutex) CSTL_MAP_LOCK_ATTRIBUTE(acquire_shared_capability(mutex))
+            : lock(mutex)
+        {
+        }
+        ~read_lock() CSTL_MAP_LOCK_ATTRIBUTE(release_generic_capability()) = default;
+
+      private:
+        std::shared_lock<shard_mutex> lock;
+    };
     struct alignas(64) shard
     {
-        mutable std::shared_mutex mutex;
-        table data;
+        mutable shard_mutex mutex;
+        table data CSTL_MAP_LOCK_ATTRIBUTE(guarded_by(mutex));
         shard(const Hash &h, const Equal &e) : data(0, prepared_hash(h), prepared_equal(e))
         {
         }
@@ -101,7 +131,7 @@ class concurrent_unordered_map
     {
         auto h = digest(k);
         auto &s = shards_[index(h)];
-        std::unique_lock<std::shared_mutex> l(s.mutex);
+        write_lock l(s.mutex);
         return s.data.try_emplace(query<K &&>{std::forward<K>(k), h}, std::forward<A>(a)...).second;
     }
 
@@ -141,7 +171,7 @@ class concurrent_unordered_map
     {
         auto h = digest(k);
         auto &s = shards_[index(h)];
-        std::unique_lock<std::shared_mutex> l(s.mutex);
+        write_lock l(s.mutex);
         auto i = s.data.find(query<const Key &>{k, h});
         if (i == s.data.end())
             return false;
@@ -152,7 +182,7 @@ class concurrent_unordered_map
     {
         auto h = digest(k);
         auto &s = shards_[index(h)];
-        std::shared_lock<std::shared_mutex> l(s.mutex);
+        read_lock l(s.mutex);
         auto i = s.data.find(query<const Key &>{k, h});
         if (i == s.data.end())
             return false;
@@ -163,7 +193,7 @@ class concurrent_unordered_map
     {
         auto h = digest(k);
         auto &s = shards_[index(h)];
-        std::unique_lock<std::shared_mutex> l(s.mutex);
+        write_lock l(s.mutex);
         auto result = s.data.try_emplace(query<const Key &>{k, h}, std::forward<A>(a)...);
         if (!result.second)
             std::invoke(std::forward<F>(f), result.first->second);
@@ -173,21 +203,21 @@ class concurrent_unordered_map
     {
         auto h = digest(k);
         auto &s = shards_[index(h)];
-        std::unique_lock<std::shared_mutex> l(s.mutex);
+        write_lock l(s.mutex);
         return s.data.insert_or_assign(query<const Key &>{k, h}, std::forward<V>(v)).second;
     }
     BOOST_FORCEINLINE std::size_t erase(const Key &k)
     {
         auto h = digest(k);
         auto &s = shards_[index(h)];
-        std::unique_lock<std::shared_mutex> l(s.mutex);
+        write_lock l(s.mutex);
         return s.data.erase(query<const Key &>{k, h});
     }
     template <class F> bool erase_if(const Key &k, F &&f)
     {
         auto h = digest(k);
         auto &s = shards_[index(h)];
-        std::unique_lock<std::shared_mutex> l(s.mutex);
+        write_lock l(s.mutex);
         auto i = s.data.find(query<const Key &>{k, h});
         if (i == s.data.end() || !std::invoke(std::forward<F>(f), std::as_const(i->second)))
             return false;
@@ -209,7 +239,7 @@ class concurrent_unordered_map
         std::size_t n = 0;
         for (auto &s : shards_)
         {
-            std::shared_lock<std::shared_mutex> l(s.mutex);
+            read_lock l(s.mutex);
             n += s.data.size();
         }
         return n;
@@ -222,7 +252,7 @@ class concurrent_unordered_map
     {
         for (auto &s : shards_)
         {
-            std::unique_lock<std::shared_mutex> l(s.mutex);
+            write_lock l(s.mutex);
             s.data.reserve(n / count + (n % count != 0));
         }
     }
@@ -230,7 +260,7 @@ class concurrent_unordered_map
     {
         for (auto &s : shards_)
         {
-            std::unique_lock<std::shared_mutex> l(s.mutex);
+            write_lock l(s.mutex);
             s.data.clear();
         }
     }
@@ -239,7 +269,7 @@ class concurrent_unordered_map
         std::vector<std::pair<Key, T>> v;
         for (auto &s : shards_)
         {
-            std::shared_lock<std::shared_mutex> l(s.mutex);
+            read_lock l(s.mutex);
             for (auto &x : s.data)
                 v.emplace_back(x.first, x.second);
         }
@@ -247,6 +277,8 @@ class concurrent_unordered_map
     }
 };
 } // namespace cstl
+
+#undef CSTL_MAP_LOCK_ATTRIBUTE
 
 #ifdef _MSC_VER
 #pragma warning(pop)
