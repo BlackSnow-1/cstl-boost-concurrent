@@ -67,6 +67,7 @@ if(CSTL_BUILD_EXAMPLES)
 endif()
 if(CSTL_BUILD_BENCHMARKS)
     cstl_executable(cstl_benchmark benchmarks/map.cpp)
+    cstl_executable(cstl_container_bench benchmarks/containers.cpp)
 endif()
 
 install(TARGETS cstl EXPORT cstlTargets)

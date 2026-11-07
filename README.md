@@ -1,201 +1,206 @@
-# cstl-boost-concurrent
+# CSTL 并发容器
 
-源码自包含的 C++17 并发容器库。
+CSTL 是一个自包含的 C++17 头文件库。多个线程可以用它**共享按键查找的数据**，也可以用队列**把任务或消息从一个线程交给另一个线程**。库包含七种容器，所需的第三方头文件已随源码提供。
 
-CSTL 1.0.0.0 面向**通用并发读写，兼顾吞吐和易用性**。它从成熟项目中选取适合的数据结构，把必要源码和许可证一起带入，提供统一的 `cstl::` 接口。
+[怎么选](#怎么选容器) · [快速上手](#快速上手) · [实测性能](#实测性能) · [并发使用约定](#并发使用约定) · [构建与验证](#构建与验证)
 
-**使用时无需安装、链接或下载 Boost、oneTBB、Folly、libcds、parallel-hashmap 或 ConcurrentQueue。** 需要 C++17 标准库和系统线程支持；阻塞队列还使用系统信号量。构建过程没有联网步骤。本正式版的功能和性能验证范围见 [验证记录](VALIDATION.md)。
+## 怎么选容器
 
-首个正式发布为 **1.0.0.0**，CMake 包版本与 GitHub Release 版本一致。C++ 容器实现与已验证的 0.3.0 保持逐字节一致，原有性能记录继续适用。发布内容见 [发布说明](RELEASE_NOTES.md)。
+如果你要**按 ID 查数据**，先看 Map 和 Set。如果你要**把消息交给其他线程**，看下面的五种队列。
 
-“STL 风格”指命名、模板和使用习惯。并发访问采用 `visit`、值副本和 `try_pop`，没有把容易产生悬空引用的 `operator[]`、`front()`、`top()` 或普通迭代器暴露出来。
-
-## 已支持的容器
-
-| 类型 | 选用的核心实现 | 本版保留的优势 |
+| 我想做什么 | 选哪个容器 | 典型用途 |
 |---|---|---|
-| `concurrent_unordered_map<Key,T,Hash,Equal,ShardBits>` | Boost 1.87.0 完整 `unordered_flat_map`，分片读写锁 | 一次哈希、分片扩容、锁内复合更新；增长与平凡元素搬迁经过定制 |
-| `concurrent_unordered_set<Key,Hash,Equal,ShardBits>` | parallel-hashmap 的分片 flat hash set | 分片并发、查重与删除、紧凑存储 |
-| `concurrent_queue<T>` | moodycamel ConcurrentQueue | MPMC、生产者分流、显式 token、批量入队/出队 |
-| `blocking_queue<T>` | moodycamel BlockingConcurrentQueue | MPMC、信号量等待、限时等待，避免空队列持续轮询 |
-| `spsc_queue<T>` | Folly ProducerConsumerQueue 的独立移植 | SPSC、固定容量、游标缓存、缓存行隔离 |
-| `bounded_queue<T>` | libcds VyukovMPMCCycleQueue 的核心循环移植 | 有界 MPMC、预分配环形存储、操作期间不增加队列存储分配 |
-| `concurrent_priority_queue<T,Compare>` | oneTBB 优先队列与 aggregator 的独立移植 | 多线程提交操作、flat combining 批处理、二叉堆优先级 |
+| 按键保存并更新一个值 | `concurrent_unordered_map` | 按用户 ID 累加请求次数 |
+| 只记录某个键出现过没有 | `concurrent_unordered_set` | 按消息 ID 去重 |
+| 一个线程发、一个线程收，要求先发先取 | `spsc_queue` | 把采集数据交给处理线程 |
+| 多个线程收发，并限制最多积压多少条 | `bounded_queue` | 给线程池设置待办任务上限 |
+| 多个线程收发，允许队列按需增长 | `concurrent_queue` | 多个解析线程把消息交给多个工作线程 |
+| 队列为空时，让消费者睡眠等待 | `blocking_queue` | 工作线程平时休眠，有任务时再唤醒 |
+| 优先处理更重要的任务 | `concurrent_priority_queue` | 优先处理严重级别较高的告警 |
 
-本版没有有序 Map/Set、并发 Vector/List/Deque、独立 MPSC 优化队列或提供严格全局 FIFO 的通用无界队列。MPMC 容器可用于 MPSC/SPSC 场景，但不代表采用了对应的专用优化。
+### 队列会按什么顺序取？
 
-选择的是当前候选中**适合本库目标的默认实现**，不是声称这些实现对所有机器、键类型和负载都最快。尚未完成与全部上游实现的统一性能对比，详见 [选型依据](SELECTION.md) 和 [验证记录](VALIDATION.md)。
+| 队列 | 取出顺序 | 容量和等待方式 |
+|---|---|---|
+| `spsc_queue` | 单个生产者先放的元素先被取出 | 固定容量，满了或空了就返回失败 |
+| `bounded_queue` | 按环形队列的槽位顺序取出。多个生产者同时入队时，以取得槽位的顺序为准 | 固定容量，满了或空了会返回失败。争用槽位时可能自旋 |
+| `concurrent_queue` | 同一个生产者的消息保持顺序，不同生产者的消息可能交错 | 可增长，`try_pop` 立即尝试取一条 |
+| `blocking_queue` | 与 `concurrent_queue` 相同 | 可增长，支持立即尝试、阻塞等待和限时等待 |
+| `concurrent_priority_queue` | 默认先取最大值，同优先级的元素可能交错 | 可增长，空时 `try_pop` 返回失败 |
 
-## 队列支持与使用边界
+这里的顺序是**出队顺序**。两个消费者并行处理时，后取到的任务也可能先做完。
 
-MPMC = 多生产者、多消费者；SPSC = 单生产者、单消费者。
+## 快速上手
 
-| 队列 | 并发模型 | 顺序语义 | 容量/内存 | 满或空时 | 进度保证 |
-|---|---|---|---|---|---|
-| `concurrent_queue` | MPMC | 保留单个生产者的顺序；不保证跨生产者全局 FIFO | 可增长；构造参数是初始预分配量，不是硬上限 | `push` 返回成功/失败；`try_pop` 返回是否取得元素 | 上游核心为 lock-free 算法；分配器和用户类型操作不因此变为无阻塞 |
-| `blocking_queue` | MPMC | 同上 | 可增长；系统信号量 | `wait_pop` 等待；`wait_pop_for` 等待至成功或超时 | 明确会阻塞；不保证等待者公平性 |
-| `spsc_queue` | **恰好一个生产者和一个消费者** | FIFO；多消费者不存在于其使用契约中 | 固定逻辑容量；底层槽数按二次幂分配 | `try_push/try_emplace` 满则失败，`try_pop` 空则失败 | 索引算法为 wait-free；用户构造/赋值不包含在此保证内 |
-| `bounded_queue` | MPMC | 保留环形队列的槽位顺序/因果 FIFO | 固定容量，必须是 ≥2 的二次幂 | 满/空返回失败；有未完成槽位操作时也可能自旋等待 | **不是严格意义的 lock-free 或 wait-free**；暂停的槽位持有者可能阻碍其他线程 |
-| `concurrent_priority_queue` | MPMC | 默认最大值优先；相同优先级不保证稳定顺序 | 可增长，底层 `std::vector` | `try_pop` 空则失败；`push/emplace` 通过异常报告失败 | flat combining 会串行执行一个批次，其他提交者可能等待 |
+### 把库加到项目
 
-### 所有队列的共同约束
+需要 C++17 和系统线程支持。可以把整个 `include/` 加到编译器的头文件搜索路径，或者在自己的 CMake 项目里使用下面的方式。分发库时请保留随附许可证。
 
-1. 先构造队列，再安全地发布给工作线程。**销毁前必须让所有生产者、消费者、观察者退出并完成 `join()`**；析构不是取消正在进行的操作。
-2. 每次出队以 `try_pop(out)` 的返回值判断是否取得元素。不要先判断大小，再假定下一步一定能取到元素。
-3. `size_approx()` 仅用于监控和启发式调度。它不是内存同步点，也不能用于判断“全部工作完成”“可以销毁”或“最后一条消息已经消费”。`bounded_queue` 故意不提供大小接口。
-4. 队列传递的是 `T` 对象。若 `T` 是指针、`shared_ptr` 或包含共享外部对象，队列不会自动保护所指向对象后续的读写。
-5. 多消费者的**处理完成顺序**可以与出队顺序不同。需要业务完成顺序时，应额外使用序号和排序/提交机制。
-6. 容器均不可复制或移动，避免并发期间迁移存储。头文件中的 `detail` 实现不属于稳定公开接口。
+| 使用方式 | 在 CMake 中添加 |
+|---|---|
+| 把 CSTL 源码放进自己的项目 | `add_subdirectory(path/to/cstl)` |
+| 使用已安装的 CSTL | `find_package(cstl CONFIG REQUIRED)` |
 
-### `concurrent_queue` 的特别约束
+两种方式都用 `target_link_libraries(my_app PRIVATE cstl::cstl)` 把库加到自己的目标，其中 `my_app` 是目标名。
 
-- 每次检查 `push`、`try_push`、`push_bulk` 的 `bool` 返回值；忽略失败会丢业务消息。
-- `push` 可增加队列存储。`try_push` 不增加队列块分配，但**不带 token 的第一次隐式生产者注册仍可能分配**。显式 token 的创建也可能分配，应在热点路径之前完成。
-- `try_push` 失败不等同于一个精确的全局“满”状态；它受生产者子队列及预分配块可用性影响。要求确定内存上限时，使用 `bounded_queue`。
-- producer/consumer token 必须来自当前队列；**同一个 token 不可被多个线程同时使用**，并且必须在队列销毁前释放。不同消费者各用自己的 consumer token。
-- 跨生产者的同步关系不产生全局 FIFO 保证；严格跨生产者排序需求不能直接交给这个队列。
-- `try_pop_bulk` 的输出范围必须可写且至少容纳 `max_count` 个元素；返回值为实际出队数。需要移动批量输入时传入 `std::make_move_iterator`。
+### 示例一：两个线程更新同一个计数
 
-### `blocking_queue` 的特别约束
-
-- 没有 `close()`、自动取消、背压或停止令牌；`wait_pop` 在没有新元素时可以永久等待。
-- 需要可退出的工作线程时，可使用 `wait_pop_for` 搭配由业务维护的停止协议。超时会受到系统调度和时钟精度影响，不是硬实时期限。
-- `wait_pop_for(out, timeout)` 的零或负时长被归一为立即尝试；不会因底层负数约定意外变成无限等待。传入时长必须能够表示为有符号 64 位微秒。
-- 不可在任意生产者尚有消息未完成发布时随意发送终止哨兵。跨生产者没有全局 FIFO，哨兵可能先被看到。
-- 本库测试中的哨兵示例仅用于**同一个生产者先发完数据、再发每位消费者的哨兵**，并在所有消费者结束后销毁队列。复杂 MPMC 停机请使用独立的生产者完成/业务在途计数协议。
-
-### `spsc_queue` 的特别约束
-
-- 多个生产者并发调用写接口，或多个消费者并发调用读接口，违反契约；不要用一次测试没出错作为支持依据。
-- 容量参数范围为 `[1, 2^31]`；`capacity()` 返回可用逻辑容量。内部分配向上取整至二次幂，内存预算按底层槽数估算。
-- 本版要求目标平台支持始终 lock-free 的 64 位原子，否则编译失败；要求 `T` 的移动赋值和析构为 `noexcept`。
-- 元素构造可抛异常；构造失败时不发布写游标。为了稳定延迟，推荐使用不分配、不抛异常的轻量消息类型。
-- `size_approx` 可从第三个观察线程调用，结果夹在 `[0, capacity()]` 范围内，但它不提供同步保证。
-- 游标使用 64 位递增计数；不承诺经历完整 `2^64` 次操作回绕后的行为。
-
-### `bounded_queue` 的特别约束
-
-- 构造时校验容量。入队构造以及出队移动赋值必须 `noexcept`；在取得槽位后抛异常会破坏发布协议，因此这些约束由 `static_assert` 强制。
-- “操作期间不分配队列存储”不意味着消息类型自身的操作不分配内存。`std::string` 的复制通常不满足不抛异常构造要求，可改为移动或使用轻量句柄。
-- `try_` 表示会在满/空时返回失败，**不表示等待时间有固定上界**。竞争、线程暂停及槽位发布会导致自旋；不适合硬实时截止时间。
-- 没有按时间等待、自动增长、关闭或丢弃最旧消息功能。
-
-### `concurrent_priority_queue` 的特别约束
-
-- 默认 `std::less<>` 构成最大优先队列；最小优先队列使用 `std::greater<>`。比较器必须提供严格弱序且不抛异常。
-- 要求 `T` 的移动构造、移动赋值和析构均为 `noexcept`，避免处理线程抛出异常后使其他提交者永久等待；编译期检查这些要求。
-- `push` 返回 `void`。继承所选上游实现的失败处理：批次中插入失败会在调用方表现为 `std::bad_alloc`，不保留所有原始异常类型。
-- 并发期间只允许使用公开的 `push`、`emplace`、`try_pop`、`size_approx`。`clear_unsafe()` 必须在所有其他访问停止后调用。
-- 没有 `top()` 引用，也没有“查看最高优先级后稍后仍保证弹出同一元素”的契约。持续高优先级流量可能使低优先级任务长期得不到处理。
-- 自包含移植替换了 oneTBB 的内存分配器、等待策略并移除了 profiling；因此不直接继承 oneTBB 的性能数据或全部验证结论。
-
-## 哈希容器的使用边界
-
-- Map 和 Set 都使用 `ShardBits` 指定的分片 `std::shared_mutex`；允许 `0..8`，默认 4（16 分片）。Map 的每片使用 Boost flat map，Set 仍使用 parallel-hashmap。同一 key 的更新会串行化；热点 key、差的哈希分布或长回调会限制吞吐。
-- `try_emplace`、`insert`、`insert_or_assign` 返回 `bool` 表示是否新插入，**不返回迭代器**。`insert_or_assign` 返回 `false` 也可能已成功更新旧值。
-- `try_emplace_or_visit(key, callback, args...)` 在底层一次受保护操作内完成“缺失则构造，否则更新”；回调仅在元素原先存在时调用。
-- `visit(key, f)` 传入 `T&`，`cvisit(key, f)` 传入 `const T&`，返回是否找到 key。`find(key)` 返回 `std::optional<T>` 副本；`find/snapshot` 仅在元素可复制时可用。移动专属值可通过 visitor 访问。
-- **回调执行期间不能重新访问同一容器，也不要持有一个容器的锁再访问另一个容器。** 跨容器反向加锁可能死锁；引用和指针不能从回调逃逸。回调保持短小，避免 I/O、等待或未知锁。
-- `contains` 后紧接着 `find/erase` 是两个独立操作；需要复合原子操作时使用 visitor 或 `erase_if(key,predicate)`。不支持跨 key/跨容器事务。
-- Map/Set 的 `size()`、`reserve()` 和 `clear()` 都逐分片加锁；观察元数据时持锁。
-- `snapshot/size/reserve/clear` 都不提供全表一致性快照；`size()` 不能与其他操作组成事务。不同分片的观察可能来自不同时间点，`clear()` 返回后其他线程仍可写入。需要精确外部一致性时，先停止写入。
-- `reserve(n)` 按平均分布为每片预留空间，不保证偏斜分布下完全不扩容；Map/Set 均只在受影响分片中扩容。
-- Hash/Equal 必须对并发调用安全，键在容器中保持哈希/相等关系稳定。复杂用户类型、抛异常的哈希/比较/移动/构造及分配失败的完整异常恢复尚未验证；不承诺 STL 的强异常保证。可靠服务应使用稳定的无异常热路径类型并处理资源耗尽。
-- 随包 `boost/` 固定为 1.87.0；同一工程需要其他 Boost 组件时，应保持版本一致。Map 的回调在持锁期间直接调用，支持有状态左值、移动专属回调与仅接受右值的回调。
-- 本版没有自定义 allocator、带状态 Hash/Equal 的构造参数或异构查询接口；不能把这一层当作上游全部 API 的转发。
-
-## 快速使用
-
-把整个 `include/` 放入头文件搜索路径；发行时保留相应许可证。或者使用 CMake：
-
-```cmake
-add_subdirectory(path/to/cstl)
-target_link_libraries(your_program PRIVATE cstl::cstl)
-```
+`try_emplace_or_visit` 把「不存在就插入，已经存在就更新」做成一次受保护的操作。下面两个线程各记一次请求，最终输出 `2`。
 
 ```cpp
-#include <cstl/cstl.hpp>
-#include <string>
+#include <cstl/concurrent_unordered_map.hpp>
+#include <iostream>
+#include <thread>
 
-cstl::concurrent_unordered_map<std::string, int> counts;
+int main() {
+    cstl::concurrent_unordered_map<int, int> requests;
 
-void record_request() {
-    counts.try_emplace_or_visit("requests", [](int& n) { ++n; }, 1);
+    auto record_request = [&] {
+        requests.try_emplace_or_visit(42, [](int& count) { ++count; }, 1);
+    };
+
+    std::thread first(record_request);
+    std::thread second(record_request);
+    first.join();
+    second.join();
+
+    std::cout << requests.find(42).value_or(0) << '\n';
 }
-
-// 复制读取：返回值离开容器锁后仍有效。
-auto total = counts.find("requests");
 ```
 
+### 示例二：给任务队列设定积压上限
+
+队列最多放 1024 条。提交方检查 `try_push` 的结果，消费方只有在 `try_pop` 成功后才使用取出的值。
+
 ```cpp
-cstl::concurrent_queue<int> messages;
-{
-    auto producer = messages.make_producer_token();
-    if (!messages.push(producer, 42)) {
-        // 业务选择重试、记录错误或中止；不能忽略失败。
+#include <cstl/bounded_queue.hpp>
+#include <iostream>
+
+int main() {
+    cstl::bounded_queue<int> tasks(1024);
+
+    if (!tasks.try_push(42)) {
+        std::cerr << "Queue is full\n";
+        return 1;
     }
-} // token 先于 messages 销毁
 
-int message;
-if (messages.try_pop(message)) {
-    // 处理成功取出的消息。
+    int task{};
+    if (tasks.try_pop(task)) {
+        std::cout << "Task " << task << '\n';
+    }
 }
-
-cstl::spsc_queue<int> one_to_one(1024);
-cstl::bounded_queue<int> fixed_mpmc(1024);
-cstl::concurrent_priority_queue<int> priorities;
-priorities.push(9);
 ```
 
-## 构建、测试和安装
+仓库里还有一个完整的多线程计数和阻塞队列示例。 [examples/basic.cpp](examples/basic.cpp)
 
-在已配置 C++ 工具链的终端中执行：
+## 实测性能
+
+同一台 **Intel Core i7-9750H** 上，用 C++17 Release 跑了两套环境。每个场景预热后跑 7 次，取中位数。表中数字是所有线程的合计吞吐，线程由系统调度。
+
+**测试数据全部使用平凡类型 `std::uint64_t`（8 字节无符号整数）**。Map 的键和值、Set 的键，以及五种队列的消息均使用这一类型。表中的吞吐适用于这个整数负载。
+
+- **Windows**：原生 Windows x64，MSVC 19.44，`/O2`。
+- **WSL**：Ubuntu 24.04 / WSL 2 x86-64，GCC 13.3，`-O3`。
+
+### 哈希容器每秒能处理多少次
+
+| 容器和操作 | 线程数 | Windows / MSVC（Mops/s） | WSL / GCC（Mops/s） |
+|---|---:|---:|---:|
+| Map 查找已有键 | 1 | 23.87 | 32.55 |
+| Map 查找已有键 | 4 | 25.74 | 30.23 |
+| Map 给已有键的值加一 | 4 | 18.81 | 15.04 |
+| Set 查找已有键 | 1 | 24.92 | 28.83 |
+| Set 查找已有键 | 4 | 20.87 | 22.81 |
+| Set 删除一个键再插回去 | 4 | 5.83 | 2.06 |
+
+**1 Mops/s = 10⁶ 次操作/秒。** 查找用的是 **65,536 个已存入的整数键**，每次都能找到。Set 的最后一行把一次删除加一次插入计为一次逻辑操作，各线程操作不同的键范围。
+
+### 队列每秒能交接多少条消息
+
+「一写一读」是 1 个生产者和 1 个消费者，「两写两读」是 2 个生产者和 2 个消费者。
+
+| 队列 | Windows 一写一读（Mmsg/s） | WSL 一写一读（Mmsg/s） | Windows 两写两读（Mmsg/s） | WSL 两写两读（Mmsg/s） |
+|---|---:|---:|---:|---:|
+| `spsc_queue` | 68.24 | 51.53 | 仅支持一写一读 | 仅支持一写一读 |
+| `bounded_queue` | 44.17 | 44.28 | 9.96 | 9.34 |
+| `concurrent_queue` | 10.49 | 14.65 | 8.48 | 7.40 |
+| `blocking_queue` | 6.53 | 6.48 | 6.00 | 5.32 |
+| `concurrent_priority_queue` | 4.67 | 6.22 | 1.88 | 2.66 |
+
+**1 Mmsg/s = 10⁶ 条消息/秒。** 一个 **8 字节整数**成功入队并被取出，算一条消息。每轮从空队列开始，交接 400,000 条。固定容量队列可放 1024 条，可增长队列的初始预留参数为 1024。阻塞队列使用 `wait_pop_for`。
+
+两套环境的操作系统、编译器和优化选项都不同，表中的差异反映整套环境。比如 WSL 的 SPSC 单次结果约为 **20.24–118.04 Mmsg/s**，中位数是 **51.53 Mmsg/s**。这组测试测量的是持续交接吞吐，单条消息的等待时间和尾延迟需要另测。 [Windows 原始样本](results/container-benchmarks.csv) · [WSL 原始样本](results/container-benchmarks-gcc-wsl.csv) · [Map 与原版对照](PERFORMANCE.md)
+
+<details>
+<summary>在自己的机器上重跑</summary>
 
 ```sh
-cmake -S . -B build -DCSTL_BUILD_TESTS=ON -DCSTL_BUILD_EXAMPLES=ON -DCSTL_BUILD_BENCHMARKS=ON -DCMAKE_BUILD_TYPE=Release
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCSTL_BUILD_BENCHMARKS=ON
+cmake --build build --config Release --target cstl_container_bench
+./build/cstl_container_bench
+```
+
+程序输出 CSV。计时排除容器构造、预填和最终校验。Windows 可执行文件带 `.exe`，Visual Studio 等多配置生成器在构建目录下另有 `Release/` 子目录。
+
+用 GCC 复跑时，在新的构建目录配置并加上 `-DCMAKE_CXX_COMPILER=g++`。
+
+`cstl_compare` 用于比较当前 Map、压缩包原版（`baseline-handoff`）和直接使用 Boost 的实现。用同一构建配置生成该目标后，可运行 `python tools/benchmark.py --exe build/cstl_compare --output results/local-map`。`cstl_benchmark` 是旧的整数更新对照程序，基线是 `std::unordered_map + mutex`。 [详细方法](PERFORMANCE.md)
+
+</details>
+
+## 并发使用约定
+
+- **先构造容器，再交给线程。** 等所有访问它的线程退出后再销毁。对自己创建的线程，先完成 `join()`。
+- **以操作的返回值为准。** `try_pop(out)` 返回成功才使用 `out`。对返回 `bool` 的入队接口，也要处理失败。大小估计适合监控，线程之间的协调需要独立的同步方式。
+- **Map 和 Set 的访问回调要短。** 回调持有对应分片的锁。把需要的数据复制出来再做 I/O 或耗时处理，回调里避免重入同一容器或获取其他容器的锁。引用和指针的使用限于回调期间。
+- **队列保护的是传进去的元素。** 如果元素是指针，多个线程之后同时访问指向的对象，仍要为该对象安排同步。
+
+<details>
+<summary>队列的容量、类型要求和停机细节</summary>
+
+- **通用队列。** `push` 可以增加存储。`try_push` 不分配新的队列块，但首次隐式生产者注册仍可能分配。token 必须来自同一个队列，同一 token 同一时间只能由一个线程使用，并且要在队列销毁前释放。批量出队时，输出范围须至少容纳请求的最大条数。
+- **阻塞队列。** `wait_pop` 可以一直等，停机由调用方协调。`wait_pop_for` 可用于定期检查停止条件，零或负时长按立即尝试处理，传入时长须能表示为有符号 64 位微秒。多生产者场景如果用终止消息，要先确认正常任务已经处理完，避免消费者提前退出。
+- **SPSC 队列。** 只允许一个生产者和一个消费者。可用容量为 1 到 2³¹，实际存储槽数向上取整为二次幂。平台须支持始终无锁的 64 位原子操作。元素的移动赋值和析构须为 `noexcept`，入队构造可以抛异常。第三个观察线程可以读取 `size_approx()`，它只提供估计。64 位游标完整回绕后的行为不在契约内。
+- **有界队列。** 容量须为至少 2 的二次幂。元素入队构造、出队移动赋值和析构须为 `noexcept`。队列存储预先分配，元素自身仍可能分配内存。槽位被占用但尚未发布时，其他操作可能自旋。接口没有硬实时等待上界。
+- **优先队列。** 默认 `std::less<>` 先取最大值，改用 `std::greater<>` 可先取最小值。比较器须满足严格弱序且为 `noexcept`，元素的移动构造、移动赋值和析构也须为 `noexcept`。批次插入失败以 `std::bad_alloc` 报告。高优先级任务持续到来时，低优先级任务可能一直等待。`clear_unsafe()` 须在其他线程全部停止访问后调用。
+
+</details>
+
+<details>
+<summary>哈希容器的返回值、锁和快照细节</summary>
+
+- Map 的 `try_emplace`、`insert` 和 `insert_or_assign` 返回是否新增键。`insert_or_assign` 返回 `false` 时，原有值可能已经更新。Set 的 `insert` 返回是否新增键，可以直接用它做查重。
+- Map 的 `visit` 和 `cvisit` 分别给回调传可写和只读引用，返回是否找到键。`find` 给出 `std::optional<T>` 副本。只可移动的值可在回调里访问。`contains` 再接 `find` 或 `erase` 是两次操作，需要一次完成时用相应的访问或条件删除接口。
+- Map 和 Set 默认各有 16 个分片，`ShardBits` 可设为 0 到 8。同一分片的写入受分片锁保护。热点键、哈希分布偏斜、耗时回调都会影响并发度。
+- `size`、`snapshot`、`reserve` 和 `clear` 按分片执行。观察可能来自不同时间点，需要全表一致的结果时先停止写入。`reserve(n)` 按平均分布预留容量，键偏向某个分片时该分片仍可能扩容。
+- 自定义哈希和比较函数须能并发调用，键的哈希和相等关系在存储期间要保持稳定。公开接口不包含跨键事务、自定义分配器、带状态哈希或比较器构造参数，以及异构查询。容器不可复制或移动。
+
+</details>
+
+## 构建与验证
+
+从源码构建示例和项目测试。MSVC 建议在 x64 Native Tools 终端或 Visual Studio CMake 中执行。
+
+```sh
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCSTL_BUILD_EXAMPLES=ON -DCSTL_BUILD_TESTS=ON
 cmake --build build --config Release
 ctest --test-dir build -C Release --output-on-failure
 cmake --install build --config Release --prefix /your/install/prefix
 ```
 
-安装后可通过 `find_package(cstl CONFIG REQUIRED)` 和 `cstl::cstl` 使用。头文件库本身没有待编译的第三方二进制。
+用 CLion 浏览源码时，可在 CMake Profile 加上 `-DCSTL_BUILD_EXAMPLES=ON` 并重新加载，让编辑器能从一个实际 C++ 目标获取头文件的编译上下文。已安装到自定义目录时，配置使用方项目可传入 `-DCMAKE_PREFIX_PATH=/your/install/prefix`。
 
-MSVC 建议使用 x64 Native Tools 终端或 Visual Studio CMake；GCC/Clang 直接编译示例可使用 `c++ -std=c++17 -O2 -pthread -Iinclude examples/basic.cpp`。本机实际验证平台为 Windows x64 / MSVC 19.44；0.3.0 同代码实现基线的跨平台 CI 记录见 `results/validation/ci.json`；1.0.0.0 发布提交的 CI 记录见 Release 附件 `validation-1.0.0.0.json`；0.2.0 历史 CI 已归档到 `results/v0.2.0/validation/`。
+GitHub Actions 在 **Windows x64、Linux x64、Linux ARM64 和 macOS** 上运行 Debug 和 Release 项目测试及 Boost 并发核心测试。独立检查包括 ASan/LSan、TSan、UBSan、MSan、Valgrind Memcheck、Clang 静态分析和 Map 锁检查，以及 Relacy 的队列槽位复用模型。TSan 的 moodycamel 显式入队报告过滤范围可查看规则。 [CI 配置](.github/workflows/ci.yml) · [TSan 规则](.github/tsan.supp) · [验证记录](VALIDATION.md)
 
-GitHub Actions 在 Windows x64、Linux x64、Linux ARM64 和 macOS 上分别以 Debug 和 Release 运行项目测试及 32 个 Boost 官方并发核心测试程序。
+## 实现来源和许可
 
-Linux CI 分别在 AddressSanitizer（ASan，含泄漏检查）、ThreadSanitizer（TSan）和 UndefinedBehaviorSanitizer（UBSan）下运行项目测试。支持相应 sanitizer 的 GCC/Clang 环境可通过 `-DCSTL_BUILD_TESTS=ON` 与 `-DCSTL_ENABLE_ASAN=ON`、`-DCSTL_ENABLE_TSAN=ON` 或 `-DCSTL_ENABLE_UBSAN=ON` 复现，每项使用独立的构建目录。TSan CI 加载 `.github/tsan.supp`，过滤 moodycamel 显式生产者入队路径上因 GCC TSan 无法识别原子栅栏而产生的报告。Linux CI 另用 Valgrind Memcheck 运行两个项目测试程序，并用 clang-tidy 启用 Clang Static Analyzer 的核心及 C++ 检查。
+| 容器 | 核心来源 |
+|---|---|
+| `concurrent_unordered_map` | Boost 1.87.0 `unordered_flat_map`，外加 CSTL 分片读写锁 |
+| `concurrent_unordered_set` | parallel-hashmap 分片 flat hash set |
+| `concurrent_queue` / `blocking_queue` | moodycamel ConcurrentQueue / BlockingConcurrentQueue |
+| `spsc_queue` | Folly ProducerConsumerQueue 的独立移植 |
+| `bounded_queue` | libcds VyukovMPMCCycleQueue 的核心循环移植 |
+| `concurrent_priority_queue` | oneTBB 优先队列和 aggregator 的独立移植 |
 
-`cstl_benchmark [threads] [operations_per_thread]` 仅测预填充整数哈希表的更新，对照 `std::unordered_map + mutex`，并校验最终总数。它不比较全部候选库，也不覆盖队列、读多写少、热点 key 或尾延迟，不能用于证明全场景最快。
-
-```sh
-python tools/verify_vendor.py
-```
-
-该离线工具验证提取文件及保留原件与清单中 SHA-256 的一致性；它不是安全审计或并发正确性证明。
-
-## 来源与许可
-
-精确 commit、原始文件位置、SHA-256 和移植改动见 [vendor_manifest.json](vendor_manifest.json)。未修改源码直接保留；移植版本在文件顶部标注变化，原件保存在 `provenance/`。默认构建不会编译原件。
-
-新接口与测试采用 MIT；第三方源码分别保留 Apache-2.0、Boost-1.0、BSD 和 zlib 等原许可证，不能把整个库统一说成仅 MIT。详见 [THIRD_PARTY.md](THIRD_PARTY.md)、[NOTICE.md](NOTICE.md) 和 `licenses/`。
-
-## Boost 替换与可复现对比
-
-项目在 `baseline-handoff` Git 标签保留压缩包原始版本。原 Map 头文件另保存在 `provenance/cstl/`；benchmark 对照仅改变命名空间和 include 路径。
-
-Boost 1.87.0 官方归档及 commit、SHA-256 记录于 `vendor_manifest.json`。`include/boost/` 包含完整 Unordered 实现和递归依赖。Map 改为完整 Boost flat map 加分片读写锁，以恢复原版的锁粒度和局部扩容。使用透明预哈希查询，未触发扩容的单键操作只调用一次用户 Hash（迁移旧键仍按表的需要重新哈希），不在每个元素中额外保存哈希。`detail/foa/core.hpp` 含少量可追溯定制：仅对本库内部 Hash 启用 14/15 的负载上限，并对平凡元素使用合法的平凡复制构造搬迁。未修改探测正确性、引用生命周期或内存序；未标记的普通 Boost Hash 保持官方负载上限和搬迁分派。原件、改动说明与 SHA 记录见 `provenance/boost/` 和 `vendor_manifest.json`。
-
-```sh
-cmake -S . -B build-release -DCMAKE_BUILD_TYPE=Release -DCSTL_BUILD_TESTS=ON -DCSTL_BUILD_EXAMPLES=ON -DCSTL_BUILD_BENCHMARKS=ON
-cmake --build build-release --config Release
-ctest --test-dir build-release -C Release --output-on-failure
-python tools/verify_vendor.py
-python tools/benchmark.py --exe build-release/cstl_compare --output results
-```
-
-Windows 使用 `.exe`；多配置生成器使用 `build-release/Release/cstl_compare.exe`。MSVC 可指定 `-DCMAKE_POLICY_DEFAULT_CMP0141=NEW -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Embedded` 避免 PDB 服务依赖。
-
-`-DCSTL_BUILD_UPSTREAM_TESTS=ON` 额外构建官方并发容器核心测试。Serialization 和跨进程测试依赖额外编译型 Boost 库，不在本头文件库的核心测试范围；具体执行范围见 `VALIDATION.md`。
-
-性能矩阵同时比较压缩包的 parallel-hashmap 原版、直接 Boost 与 CSTL 封装；包括整数/字符串键、1/4/12 线程、65536 键及 64 热键、读取/未命中/更新/复合更新/混合/删除重插/预留插入/增长插入。每次检查正确性，随机交错运行，保留原始样本和置信区间。0.2.0 旧结果保存在 `results/v0.2.0/`。结果与限制见 `PERFORMANCE.md`，不能把有限硬件上的测量解释成所有负载性能完全相同。
+同一工程若还使用其他 Boost 组件，请与随包的 Boost 1.87.0 保持一致。新接口和测试采用 MIT，第三方源码各自保留原许可证。来源、修改和校验值记录在清单中，可运行 `python tools/verify_vendor.py` 做离线完整性检查。 [来源清单](vendor_manifest.json) · [选型依据](SELECTION.md) · [第三方许可](THIRD_PARTY.md) · [发布说明](RELEASE_NOTES.md)
